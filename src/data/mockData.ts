@@ -77,7 +77,7 @@ export const quickActions: QuickAction[] = [
   { id: 'qa4', label: 'Команда', command: 'cmd' },
 ]
 
-export type SearchCategory = 'document' | 'service' | 'action'
+export type SearchCategory = 'document' | 'service' | 'action' | 'section'
 
 export interface SearchResult {
   id: string
@@ -97,6 +97,7 @@ export const searchResults: SearchResult[] = [
     description: 'Правила работы с корпоративными данными, системами и паролями',
     shortDesc: 'Правила работы с данными',
     alias: '/sec-policy',
+    route: '/document',
   },
   {
     id: 'sr2',
@@ -105,6 +106,7 @@ export const searchResults: SearchResult[] = [
     description: 'Условия и требования для работы вне офиса',
     shortDesc: 'Условия удалённой работы',
     alias: '/remote-policy',
+    route: '/document',
   },
   {
     id: 'sr3',
@@ -113,6 +115,7 @@ export const searchResults: SearchResult[] = [
     description: 'Готовый шаблон для оформления заявления на ежегодный отпуск',
     shortDesc: 'Шаблон для оформления отпуска',
     alias: '/leave-template',
+    route: '/document',
   },
   {
     id: 'sr4',
@@ -165,7 +168,49 @@ export const searchResults: SearchResult[] = [
     shortDesc: 'Написать в поддержку',
     alias: '/support',
   },
+  {
+    id: 'sr10',
+    title: 'Задачи на согласование',
+    category: 'section',
+    description: 'Список задач, требующих вашего согласования',
+    shortDesc: 'Задачи для согласования',
+    alias: '/approval',
+    route: '/tasks',
+  },
 ]
+
+export interface DropdownAction {
+  label: string
+  nav: string
+}
+
+export interface DropdownData {
+  examples?: string[]
+  recent: string[]
+  actions?: DropdownAction[]
+}
+
+export const dropdownData: Record<'basic' | 'standard' | 'expert', DropdownData> = {
+  basic: {
+    examples: ['заявление на отпуск', 'доступ к системе', 'мои задачи'],
+    recent: ['политика ИБ', 'отчёт за апрель'],
+  },
+  standard: {
+    recent: ['политика ИБ', 'шаблон заявления'],
+    actions: [
+      { label: 'Создать заявку', nav: '/task' },
+      { label: 'Открыть мои задачи', nav: '/tasks' },
+    ],
+  },
+  expert: {
+    recent: ['политика ИБ', 'доступ'],
+    actions: [
+      { label: 'Создать заявку', nav: '/task' },
+      { label: 'Открыть задачи', nav: '/tasks' },
+      { label: 'Написать в поддержку', nav: '/help' },
+    ],
+  },
+}
 
 export const searchSuggestions: Record<'basic' | 'standard' | 'expert', string[]> = {
   basic: ['заявка на отпуск', 'инструкция', 'командировка', 'помощь'],

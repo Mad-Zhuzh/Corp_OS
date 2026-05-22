@@ -137,7 +137,7 @@ function BasicTour({ onDone, onChangeMode }: TourProps) {
 
   return (
     <>
-      <PageTitle>Как ориентироваться в CorpOS</PageTitle>
+      <PageTitle>Как начать работу в CorpOS</PageTitle>
       <PageSubtitle>
         Эти элементы помогут быстрее начать работу в системе.
       </PageSubtitle>
@@ -170,61 +170,122 @@ function BasicTour({ onDone, onChangeMode }: TourProps) {
 const StandardStepList = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.75rem;
   margin-bottom: 0.5rem;
 `
 
-const StandardStep = styled.div`
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  padding: 0.875rem 1.25rem;
+const StandardStep = styled.div<{ $active: boolean }>`
+  background: ${({ $active }) => ($active ? '#eef2ff' : '#ffffff')};
+  border: 1px solid ${({ $active }) => ($active ? '#a5b4fc' : '#e5e7eb')};
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
   display: flex;
-  align-items: center;
   gap: 1rem;
+  align-items: flex-start;
+  box-shadow: ${({ $active }) => $active ? '0 0 0 3px rgba(99,102,241,0.1)' : '0 1px 3px rgba(0,0,0,0.05)'};
+  cursor: default;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
 `
 
-const StandardStepIndex = styled.div`
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: #f0f0f5;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.75rem;
+const StandardStepNumber = styled.div<{ $active: boolean }>`
+  font-size: 1.25rem;
   font-weight: 700;
-  color: #6366f1;
+  color: ${({ $active }) => ($active ? '#c7d2fe' : '#e0e7ff')};
+  line-height: 1;
   flex-shrink: 0;
+  width: 1.75rem;
+  transition: color 0.15s;
+`
+
+const StandardStepBody = styled.div`
+  flex: 1;
 `
 
 const StandardStepTitle = styled.div`
   font-size: 0.9375rem;
   font-weight: 600;
   color: #1a1a1a;
+  margin-bottom: 0.25rem;
 `
 
-const STANDARD_STEPS = [
-  { n: '1', title: 'Поиск и разделы' },
-  { n: '2', title: 'Уведомления' },
-  { n: '3', title: 'Заявки и сервисы' },
+const StandardStepDesc = styled.div`
+  font-size: 0.875rem;
+  color: #4b5563;
+  line-height: 1.55;
+`
+
+const StepAction = styled.div`
+  margin-top: 0.75rem;
+`
+
+interface StandardStepDef {
+  n: string
+  title: string
+  desc: string
+  zone: HighlightZone
+  action: { label: string; view: 'primary' | 'secondary'; nav: string } | null
+}
+
+const STANDARD_STEPS: StandardStepDef[] = [
+  {
+    n: '1',
+    title: 'Разделы',
+    desc: 'Используйте боковое меню, чтобы перейти к задачам, документам или сервисам.',
+    zone: 'sidebar',
+    action: null,
+  },
+  {
+    n: '2',
+    title: 'Файлы и документы',
+    desc: 'Откройте последние документы или перейдите к файловой структуре.',
+    zone: 'documents',
+    action: { label: 'Открыть файлы', view: 'secondary', nav: '/documents' },
+  },
+  {
+    n: '3',
+    title: 'Поиск',
+    desc: 'Найдите документ, раздел или действие по названию или смыслу.',
+    zone: 'search',
+    action: null,
+  },
 ]
 
-function StandardTour({ onDone, onChangeMode }: TourProps) {
+function StandardTour({ onChangeMode }: TourProps) {
+  const { zone, setZone } = useTourHighlight()
+  const navigate = useNavigate()
+
   return (
     <>
-      <PageTitle>Как ориентироваться в CorpOS</PageTitle>
-      <PageSubtitle>Три области, которые вы будете использовать чаще всего.</PageSubtitle>
+      <PageTitle>Как начать работу в CorpOS</PageTitle>
+      <PageSubtitle>Несколько быстрых ориентиров для самостоятельной работы в системе.</PageSubtitle>
       <StandardStepList>
         {STANDARD_STEPS.map((s) => (
-          <StandardStep key={s.n}>
-            <StandardStepIndex>{s.n}</StandardStepIndex>
-            <StandardStepTitle>{s.title}</StandardStepTitle>
+          <StandardStep
+            key={s.n}
+            $active={zone === s.zone}
+            onMouseEnter={() => setZone(s.zone)}
+            onMouseLeave={() => setZone(null)}
+          >
+            <StandardStepNumber $active={zone === s.zone}>{s.n}</StandardStepNumber>
+            <StandardStepBody>
+              <StandardStepTitle>{s.title}</StandardStepTitle>
+              <StandardStepDesc>{s.desc}</StandardStepDesc>
+              {s.action && (
+                <StepAction>
+                  <Button
+                    view={s.action.view}
+                    size="s"
+                    text={s.action.label}
+                    onClick={() => navigate(s.action!.nav)}
+                  />
+                </StepAction>
+              )}
+            </StandardStepBody>
           </StandardStep>
         ))}
       </StandardStepList>
       <ActionRow>
-        <Button view="primary" size="m" text="Перейти к работе" onClick={onDone} />
+        <Button view="primary" size="m" text="Попробовать поиск" onClick={() => navigate('/onboarding/search')} />
         <ChangeModeLink onClick={onChangeMode}>Изменить режим</ChangeModeLink>
       </ActionRow>
     </>
@@ -233,19 +294,18 @@ function StandardTour({ onDone, onChangeMode }: TourProps) {
 
 // ─── Expert tour ──────────────────────────────────────────────────────────────
 
+const ExpertSubtitle = styled.p`
+  font-size: 0.9375rem;
+  color: #4b5563;
+  line-height: 1.55;
+  margin-bottom: 1.75rem;
+`
+
 const ExpertCard = styled.div`
   background: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-`
-
-const ExpertDesc = styled.p`
-  font-size: 0.9375rem;
-  color: #4b5563;
-  line-height: 1.55;
-  margin-bottom: 1.25rem;
+  padding: 1.5rem 1.75rem;
 `
 
 const CapabilitiesLabel = styled.div`
@@ -254,46 +314,74 @@ const CapabilitiesLabel = styled.div`
   color: #9ca3af;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  margin-bottom: 0.625rem;
+  margin-bottom: 1.25rem;
 `
 
-const ChipsRow = styled.div`
+const ExpertFeatureList = styled.div`
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+  flex-direction: column;
+  gap: 1.25rem;
 `
 
-const Chip = styled.div`
-  background: #eef2ff;
-  border: 1px solid #c7d2fe;
-  border-radius: 6px;
-  padding: 0.3rem 0.75rem;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: #4338ca;
+const ExpertFeature = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
 `
 
-const EXPERT_CHIPS = ['Командный поиск', 'Быстрые действия', 'Компактная панель']
+const ExpertFeatureTitle = styled.div`
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #1a1a1a;
+`
+
+const ExpertFeatureDesc = styled.div`
+  font-size: 0.875rem;
+  color: #4b5563;
+  line-height: 1.55;
+`
+
+const ExpertActionRow = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-top: 1.75rem;
+`
+
+const EXPERT_FEATURES = [
+  {
+    title: 'Глобальный поиск',
+    desc: 'Находите документы, разделы и запускайте частые действия из строки поиска.',
+  },
+  {
+    title: 'Быстрые действия',
+    desc: 'Выполняйте типовые операции без лишних промежуточных шагов.',
+  },
+]
 
 function ExpertTour({ onDone, onChangeMode }: TourProps) {
   return (
     <>
       <PageTitle>Вы работаете в экспертном режиме</PageTitle>
+      <ExpertSubtitle>
+        Интерфейс показывает меньше подсказок и оставляет больше контроля над задачами.
+      </ExpertSubtitle>
       <ExpertCard>
-        <ExpertDesc>
-          Поиск становится инструментом быстрого доступа к действиям и данным.
-        </ExpertDesc>
         <CapabilitiesLabel>Доступно в этом режиме</CapabilitiesLabel>
-        <ChipsRow>
-          {EXPERT_CHIPS.map((chip) => (
-            <Chip key={chip}>{chip}</Chip>
+        <ExpertFeatureList>
+          {EXPERT_FEATURES.map((f, i) => (
+            <ExpertFeature key={i}>
+              <ExpertFeatureTitle>{f.title}</ExpertFeatureTitle>
+              <ExpertFeatureDesc>{f.desc}</ExpertFeatureDesc>
+            </ExpertFeature>
           ))}
-        </ChipsRow>
+        </ExpertFeatureList>
       </ExpertCard>
-      <ActionRow>
-        <Button view="primary" size="m" text="Перейти к работе" onClick={onDone} />
+      <ExpertActionRow>
+        <Button view="primary" size="m" text="Начать работу" onClick={onDone} />
         <ChangeModeLink onClick={onChangeMode}>Изменить режим</ChangeModeLink>
-      </ActionRow>
+      </ExpertActionRow>
     </>
   )
 }
@@ -305,7 +393,7 @@ export function OnboardingTour() {
   const navigate = useNavigate()
 
   const handleDoneBasic = () => navigate('/onboarding/search')
-  const handleDone = () => navigate('/main')
+  const handleDone = () => { localStorage.setItem('corpOsOnboarded', '1'); navigate('/main') }
   const handleChangeMode = () => navigate('/onboarding/mode')
 
   return (

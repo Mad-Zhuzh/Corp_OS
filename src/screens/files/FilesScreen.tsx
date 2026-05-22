@@ -3,6 +3,7 @@ import styled from 'styled-components'
 import { Button } from '@salutejs/plasma-web'
 import { IconFolderOutline, IconDocumentOutline } from '@salutejs/plasma-icons'
 import { useUserMode } from '../../context/UserModeContext'
+import { useNavigate } from 'react-router-dom'
 import {
   mockFiles,
   FILE_TYPE_LABELS,
@@ -157,6 +158,7 @@ const BASIC_CTX: CtxItem[] = [
 function BasicFiles() {
   const [showAllFolders, setShowAllFolders] = useState(false)
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  const navigate = useNavigate()
   const rootFolders = getRootFolders()
   const recentFiles = [...mockFiles].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5)
 
@@ -223,7 +225,7 @@ function BasicFiles() {
                 <BasicFileMeta>{file.date} · {file.owner} · {file.size}</BasicFileMeta>
               </BasicFileInfo>
               <BasicFileActions>
-                <Button view="secondary" size="s" text="Открыть" />
+                <Button view="secondary" size="s" text="Открыть" onClick={() => navigate('/document')} />
                 <MoreWrap>
                   <MoreBtn
                     title="Ещё"
@@ -432,6 +434,7 @@ const STD_CTX: CtxItem[] = [
 ]
 
 function StandardFiles() {
+  const navigate = useNavigate()
   const rootFolders = getRootFolders()
   const [selectedFolder, setSelectedFolder] = useState<string>('my')
   const [expanded, setExpanded] = useState<Set<string>>(new Set(['my']))
@@ -515,7 +518,7 @@ function StandardFiles() {
       <StdMain>
         <StdTopBar>
           <StdSearchInput
-            placeholder="Поиск по файлам…"
+            placeholder="Найти в текущей папке…"
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
@@ -548,7 +551,7 @@ function StandardFiles() {
               <StdCell>{file.date}</StdCell>
               <StdCell>{file.owner}</StdCell>
               <StdActionsCell>
-                <Button view="secondary" size="s" text="Открыть" />
+                <Button view="secondary" size="s" text="Открыть" onClick={() => navigate('/document')} />
                 <MoreWrap>
                   <MoreBtn
                     type="button"
@@ -758,18 +761,13 @@ const StdEmpty = styled.div`
 // ─── EXPERT ───────────────────────────────────────────────────────────────────
 
 function ExpertFiles() {
+  const navigate = useNavigate()
   const rootFolders = getRootFolders()
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null)
   const [expanded, setExpanded] = useState<Set<string>>(new Set(rootFolders.map(f => f.id)))
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all')
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
-  const [toastVisible, setToastVisible] = useState(false)
-
-  function showToast() {
-    setToastVisible(true)
-    setTimeout(() => setToastVisible(false), 1600)
-  }
 
   function toggleExpanded(id: string) {
     setExpanded(prev => {
@@ -849,7 +847,7 @@ function ExpertFiles() {
       <ExpMain>
         <ExpTopBar>
           <ExpSearchInput
-            placeholder="> filter..."
+            placeholder="Найти в текущей папке..."
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
@@ -875,7 +873,7 @@ function ExpertFiles() {
           {filtered.length === 0 ? (
             <ExpEmpty>No files</ExpEmpty>
           ) : filtered.map(file => (
-            <ExpRow key={file.id} onDoubleClick={showToast} title="Двойной клик — открыть файл">
+            <ExpRow key={file.id} onDoubleClick={() => navigate('/document')} title="Двойной клик — открыть файл">
               <ExpFileNameCell>
                 <IconDocumentOutline size="xs" color="#9ca3af" />
                 <span title={file.name}>{file.name}</span>
@@ -905,28 +903,9 @@ function ExpertFiles() {
         </ExpTable>
       </ExpMain>
 
-      <ExpToast $visible={toastVisible}>Недоступно в демо-режиме</ExpToast>
-
     </ExpRoot>
   )
 }
-
-const ExpToast = styled.div<{ $visible: boolean }>`
-  position: fixed;
-  bottom: 1.5rem;
-  right: 1.5rem;
-  background: #1e293b;
-  color: #e2e8f0;
-  font-size: 0.8125rem;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-  z-index: 999;
-  pointer-events: none;
-  opacity: ${({ $visible }) => ($visible ? 1 : 0)};
-  transform: ${({ $visible }) => ($visible ? 'translateY(0)' : 'translateY(6px)')};
-  transition: opacity 0.15s, transform 0.15s;
-`
 
 const ExpRoot = styled.div`
   display: flex;

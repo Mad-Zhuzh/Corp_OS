@@ -1,5 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
+import { SearchDropdown } from '../search/SearchDropdown'
+import { OpenObjectsProvider } from '../../context/OpenObjectsContext'
+import { OpenObjectsBar } from '../shared/OpenObjectsBar'
 import styled, { createGlobalStyle, css } from 'styled-components'
 import { useUserMode, type UserMode } from '../../context/UserModeContext'
 import { useTourHighlight } from '../../context/TourHighlightContext'
@@ -19,6 +22,7 @@ import {
   IconPanelSidebarLOutline,
   IconPanelSidebarLFill,
   IconInfoCircleOutline,
+  IconSearch,
 } from '@salutejs/plasma-icons'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -51,7 +55,7 @@ const NAV_ITEMS: NavItemDef[] = [
 
 // ─── Breadcrumb map ───────────────────────────────────────────────────────────
 
-interface CrumbDef { section: string; sub?: string }
+interface CrumbDef { section: string; sub?: string; sectionRoute?: string }
 
 const CRUMBS: Record<string, CrumbDef> = {
   '/main':           { section: 'Рабочая среда' },
@@ -59,6 +63,7 @@ const CRUMBS: Record<string, CrumbDef> = {
   '/task':           { section: 'Заявки', sub: 'Новая заявка' },
   '/tasks':          { section: 'Задачи' },
   '/documents':      { section: 'Файлы и документы' },
+  '/document':       { section: 'Файлы и документы', sub: 'Шаблон заявления на отпуск', sectionRoute: '/documents' },
   '/projects':       { section: 'Проекты' },
   '/services':       { section: 'Сервисы' },
   '/team':           { section: 'Команда' },
@@ -79,7 +84,7 @@ const MODE_LABELS: Record<UserMode, string> = {
 }
 
 const MODE_COLORS: Record<UserMode, string> = {
-  basic:    '#10b981',
+  basic:    '#6366f1',
   standard: '#3b82f6',
   expert:   '#8b5cf6',
 }
@@ -87,7 +92,7 @@ const MODE_COLORS: Record<UserMode, string> = {
 const SEARCH_PH: Record<UserMode, string> = {
   basic:    'Что нужно найти или сделать?',
   standard: 'Поиск по системе',
-  expert:   '> search...',
+  expert:   'Найти или выполнить действие',
 }
 
 const MODES: UserMode[] = ['basic', 'standard', 'expert']
@@ -126,10 +131,15 @@ const HeaderEl = styled.header`
   border-bottom: 1px solid #e2e8f0;
   display: flex;
   align-items: center;
-  padding: 0 1rem;
+  padding: 0 1.5rem 0 1rem;
   gap: 0.75rem;
   z-index: 200;
   flex-shrink: 0;
+`
+
+const HeaderSpacer = styled.div`
+  flex: 1;
+  min-width: 0.5rem;
 `
 
 const Logo = styled.div`
@@ -144,36 +154,71 @@ const Logo = styled.div`
   padding: 0 0.25rem;
 `
 
-const SearchBox = styled.div`
-  flex: 1;
-  max-width: 480px;
+const SearchBox = styled.div<{ $highlighted?: boolean }>`
+  width: 560px;
+  flex-shrink: 0;
+  position: relative;
+  ${({ $highlighted }) => $highlighted && css`
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(99, 102, 241, 0.15);
+      border-radius: 8px;
+      pointer-events: none;
+      z-index: 10;
+    }
+  `}
 `
 
-const SearchInput = styled.input<{ $highlighted?: boolean }>`
-  width: 100%;
+const SearchInputRow = styled.div`
+  display: flex;
+  align-items: center;
   height: 34px;
-  padding: 0 0.75rem;
-  border: 1px solid ${({ $highlighted }) => ($highlighted ? 'rgba(99,102,241,0.5)' : '#e2e8f0')};
+  border: 1px solid #e2e8f0;
   border-radius: 8px;
   background: #f8f9fa;
-  color: #1a1a1a;
-  font-size: 0.875rem;
-  outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
-  box-shadow: ${({ $highlighted }) => ($highlighted ? '0 0 0 3px rgba(99,102,241,0.12)' : 'none')};
-  &::placeholder { color: #9ca3af; }
-  &:focus {
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  &:focus-within {
     border-color: #a5b4fc;
     background: #fff;
     box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
   }
 `
 
+const SearchInput = styled.input`
+  flex: 1;
+  height: 100%;
+  padding: 0 0.5rem 0 0.75rem;
+  border: none;
+  background: transparent;
+  color: #1a1a1a;
+  font-size: 0.875rem;
+  outline: none;
+  font-family: inherit;
+  &::placeholder { color: #9ca3af; }
+`
+
+const SearchIconBtn = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: #9ca3af;
+  cursor: pointer;
+  border-radius: 0 7px 7px 0;
+  flex-shrink: 0;
+  transition: color 0.15s, background 0.15s;
+  &:hover { color: #6366f1; background: rgba(99,102,241,0.06); }
+`
+
 const HeaderRight = styled.div`
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-left: auto;
   flex-shrink: 0;
 `
 
@@ -188,7 +233,7 @@ const ModePill = styled.button<{ $open: boolean; $highlighted?: boolean }>`
   align-items: center;
   gap: 0.375rem;
   padding: 0.25rem 0.5rem 0.25rem 0.5rem;
-  border: 1px solid ${({ $highlighted }) => ($highlighted ? 'rgba(99,102,241,0.5)' : '#e2e8f0')};
+  border: 1px solid #e2e8f0;
   border-radius: 20px;
   background: ${({ $open }) => ($open ? '#f0f2f5' : '#ffffff')};
   color: #1a1a1a;
@@ -196,9 +241,8 @@ const ModePill = styled.button<{ $open: boolean; $highlighted?: boolean }>`
   font-weight: 500;
   cursor: pointer;
   white-space: nowrap;
-  transition: background 0.1s, border-color 0.2s, box-shadow 0.2s;
+  transition: background 0.1s, border-color 0.2s;
   height: 32px;
-  box-shadow: ${({ $highlighted }) => ($highlighted ? '0 0 0 3px rgba(99,102,241,0.1)' : 'none')};
   &:hover { background: #f0f2f5; border-color: #d1d5db; }
 `
 
@@ -340,14 +384,25 @@ const Body = styled.div`
 const SidebarEl = styled.aside<{ $width: number; $highlighted?: boolean }>`
   width: ${({ $width }) => $width}px;
   min-width: ${({ $width }) => $width}px;
-  background: ${({ $highlighted }) => ($highlighted ? '#f5f6ff' : '#ffffff')};
-  border-right: 1px solid ${({ $highlighted }) => ($highlighted ? 'rgba(99,102,241,0.3)' : '#e2e8f0')};
+  background: #ffffff;
+  border-right: 1px solid #e2e8f0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transition: width 0.2s ease, min-width 0.2s ease, background 0.2s, border-color 0.2s;
+  transition: width 0.2s ease, min-width 0.2s ease;
   height: 100%;
   flex-shrink: 0;
+  position: relative;
+  ${({ $highlighted }) => $highlighted && css`
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(99, 102, 241, 0.14);
+      pointer-events: none;
+      z-index: 10;
+    }
+  `}
 `
 
 const CollapseBtn = styled.button<{ $collapsed: boolean }>`
@@ -383,19 +438,14 @@ const NavBtn = styled.button<{ $active: boolean; $collapsed: boolean; $basic: bo
     $collapsed ? '0.75rem 0' : $basic ? '0.625rem 0.75rem' : '0.5rem 0.75rem'};
   justify-content: ${({ $collapsed }) => ($collapsed ? 'center' : 'flex-start')};
   border: none;
-  background: ${({ $active, $highlighted }) =>
-    $highlighted ? '#eef2ff' : $active ? '#eef2ff' : 'transparent'};
-  color: ${({ $active, $highlighted }) =>
-    $highlighted || $active ? '#4f46e5' : '#374151'};
+  background: ${({ $active }) => ($active ? '#eef2ff' : 'transparent')};
+  color: ${({ $active }) => ($active ? '#4f46e5' : '#374151')};
   font-size: 0.875rem;
-  font-weight: ${({ $active, $highlighted }) => ($active || $highlighted ? '600' : '400')};
+  font-weight: ${({ $active }) => ($active ? '600' : '400')};
   cursor: pointer;
   text-align: left;
   white-space: nowrap;
   transition: background 0.2s, color 0.2s;
-  outline: ${({ $highlighted }) => ($highlighted ? '2px solid rgba(99,102,241,0.35)' : 'none')};
-  outline-offset: -2px;
-  border-radius: ${({ $highlighted }) => ($highlighted ? '6px' : '0')};
   position: relative;
   ${({ $active }) =>
     $active &&
@@ -409,6 +459,18 @@ const NavBtn = styled.button<{ $active: boolean; $collapsed: boolean; $basic: bo
         width: 3px;
         background: #4f46e5;
         border-radius: 0 2px 2px 0;
+      }
+    `}
+  ${({ $highlighted }) =>
+    $highlighted &&
+    css`
+      &::after {
+        content: '';
+        position: absolute;
+        inset: 2px;
+        background: rgba(99, 102, 241, 0.2);
+        border-radius: 6px;
+        pointer-events: none;
       }
     `}
   &:hover {
@@ -437,11 +499,19 @@ const ContentArea = styled.div<{ $highlighted?: boolean }>`
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: ${({ $highlighted }) => ($highlighted ? '#eef2ff' : '#f0f2f5')};
+  background: #f0f2f5;
   min-width: 0;
-  transition: background 0.2s;
-  outline: ${({ $highlighted }) => ($highlighted ? '2px solid rgba(99,102,241,0.25)' : 'none')};
-  outline-offset: -3px;
+  position: relative;
+  ${({ $highlighted }) => $highlighted && css`
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(99, 102, 241, 0.13);
+      pointer-events: none;
+      z-index: 10;
+    }
+  `}
 `
 
 const BreadcrumbBar = styled.div`
@@ -514,9 +584,11 @@ export function AppLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const [query, setQuery] = useState('')
+  const [searchOpen, setSearchOpen] = useState(false)
   const [modeOpen, setModeOpen] = useState(false)
   const [collapsed, setCollapsed] = useState(mode === 'expert')
   const modeRef = useRef<HTMLDivElement>(null)
+  const searchBoxRef = useRef<HTMLDivElement>(null)
   const [toastMsg, setToastMsg] = useState('')
   const processedKey = useRef('')
 
@@ -548,14 +620,50 @@ export function AppLayout() {
     return () => document.removeEventListener('mousedown', handler)
   }, [modeOpen])
 
+  // close search dropdown on outside click
+  useEffect(() => {
+    if (!searchOpen) return
+    function handler(e: MouseEvent) {
+      if (searchBoxRef.current && !searchBoxRef.current.contains(e.target as Node)) {
+        setSearchOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [searchOpen])
+
+  // close search dropdown on navigation
+  useEffect(() => {
+    setSearchOpen(false)
+  }, [location.pathname])
+
   const sidebarWidth = collapsed ? SIDEBAR_MIN : mode === 'basic' ? SIDEBAR_BASIC : SIDEBAR_STD
   const unread = notifications.filter(n => !n.isRead).length
   const crumb = CRUMBS[location.pathname]
 
-  function handleSearch() {
+  function handleNavigateToResults() {
     const q = query.trim()
     navigate(q ? `/search?q=${encodeURIComponent(q)}` : '/search')
-    setQuery('')
+    setSearchOpen(false)
+  }
+
+  function handleResultSelect(result: { title: string; route?: string }) {
+    setSearchOpen(false)
+    const route = result.route ?? '/main'
+    navigate(route, { state: { pendingToast: `Открыто: ${result.title}` } })
+  }
+
+  function handleActionSelect(nav: string) {
+    setSearchOpen(false)
+    navigate(nav)
+  }
+
+  function handleSearchKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Enter') handleNavigateToResults()
+    else if (e.key === 'Escape') {
+      setSearchOpen(false)
+      ;(e.target as HTMLInputElement).blur()
+    }
   }
 
   function handleModeSelect(m: UserMode) {
@@ -564,7 +672,7 @@ export function AppLayout() {
   }
 
   return (
-    <>
+    <OpenObjectsProvider>
       <GlobalStyle />
       <ShellRoot>
 
@@ -572,14 +680,34 @@ export function AppLayout() {
         <HeaderEl>
           <Logo onClick={() => navigate('/main')}>CorpOS</Logo>
 
-          <SearchBox>
-            <SearchInput
-              $highlighted={zone === 'search'}
-              placeholder={SEARCH_PH[mode]}
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleSearch()}
-            />
+          <HeaderSpacer />
+
+          <SearchBox ref={searchBoxRef} $highlighted={zone === 'search'}>
+            <SearchInputRow>
+              <SearchInput
+                placeholder={SEARCH_PH[mode]}
+                value={query}
+                onChange={e => { setQuery(e.target.value); setSearchOpen(true) }}
+                onFocus={() => setSearchOpen(true)}
+                onKeyDown={handleSearchKeyDown}
+              />
+              <SearchIconBtn
+                onClick={handleNavigateToResults}
+                title="Найти"
+                tabIndex={-1}
+              >
+                <IconSearch size="xs" color="currentColor" />
+              </SearchIconBtn>
+            </SearchInputRow>
+            {searchOpen && (
+              <SearchDropdown
+                query={query}
+                onQueryChange={q => { setQuery(q) }}
+                onResultSelect={handleResultSelect}
+                onAllResults={handleNavigateToResults}
+                onActionSelect={handleActionSelect}
+              />
+            )}
           </SearchBox>
 
           <HeaderRight>
@@ -642,7 +770,10 @@ export function AppLayout() {
                     $active={active}
                     $collapsed={collapsed}
                     $basic={mode === 'basic'}
-                    $highlighted={zone === 'help' && item.id === 'help'}
+                    $highlighted={
+                      (zone === 'help' && item.id === 'help') ||
+                      (zone === 'documents' && item.id === 'documents')
+                    }
                     onClick={() => navigate(item.path)}
                     title={collapsed ? item.label : undefined}
                   >
@@ -662,7 +793,7 @@ export function AppLayout() {
               <BreadcrumbBar>
                 <BCItem $clickable onClick={() => navigate('/main')}>CorpOS</BCItem>
                 <BCSep>/</BCSep>
-                <BCItem $clickable={!!crumb.sub} onClick={crumb.sub ? () => navigate(location.pathname.replace(/\/[^/]+$/, '') || '/') : undefined}>
+                <BCItem $clickable={!!crumb.sub} onClick={crumb.sub ? () => navigate((crumb.sectionRoute ?? location.pathname.replace(/\/[^/]+$/, '')) || '/') : undefined}>
                   {crumb.section}
                 </BCItem>
                 {crumb.sub && (
@@ -673,6 +804,8 @@ export function AppLayout() {
                 )}
               </BreadcrumbBar>
             )}
+
+            <OpenObjectsBar />
 
             <ContentScroll>
               <ContentInner>
@@ -686,6 +819,6 @@ export function AppLayout() {
         <AppToast $visible={toastMsg.length > 0}>{toastMsg}</AppToast>
 
       </ShellRoot>
-    </>
+    </OpenObjectsProvider>
   )
 }

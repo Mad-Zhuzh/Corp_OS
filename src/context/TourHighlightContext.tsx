@@ -1,7 +1,7 @@
 import { createContext, useContext, useState } from 'react'
 import type { ReactNode } from 'react'
 
-export type HighlightZone = 'search' | 'sidebar' | 'content' | 'mode' | 'help' | null
+export type HighlightZone = 'search' | 'sidebar' | 'content' | 'mode' | 'help' | 'documents' | null
 
 interface TourHighlightContextValue {
   zone: HighlightZone

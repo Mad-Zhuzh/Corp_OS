@@ -1,5 +1,6 @@
 import styled from 'styled-components'
 import { Button } from '@salutejs/plasma-web'
+import { IconAttentionCircleOutline } from '@salutejs/plasma-icons'
 import { useNavigate } from 'react-router-dom'
 import { useUserMode } from '../../context/UserModeContext'
 import {
@@ -59,10 +60,10 @@ const STATUS_COLOR: Record<DeadlineStatus, string> = {
   later:   c.textTer,
 }
 
-const STATUS_BG: Record<DeadlineStatus, string> = {
-  overdue: c.redBg,
-  urgent:  c.yellowBg,
-  later:   '#f9fafb',
+const STATUS_TEXT: Record<DeadlineStatus, string> = {
+  overdue: 'Срочно',
+  urgent:  'В работе',
+  later:   'Плановая',
 }
 
 const ACTION_ROUTES: Record<string, string> = {
@@ -102,8 +103,8 @@ const BasicGreeting = styled.h1`
 `
 
 const BasicActionBlock = styled.div`
-  background: ${c.accentBg};
-  border: 1.5px solid ${c.accentBorder};
+  background: #f9fafb;
+  border: 1px solid ${c.border};
   border-radius: 16px;
   padding: 1.5rem 1.75rem;
   display: flex;
@@ -111,10 +112,26 @@ const BasicActionBlock = styled.div`
   gap: 0.875rem;
 `
 
-const BasicActionLabel = styled.div`
+const BasicActionCaption = styled.div`
   font-size: 0.8125rem;
-  color: ${c.accentDark};
-  font-weight: 500;
+  color: ${c.textTer};
+  font-weight: 400;
+  line-height: 1.4;
+  margin-bottom: 0.2rem;
+`
+
+const BasicActionTitle = styled.div`
+  font-size: 1rem;
+  color: ${c.text};
+  font-weight: 400;
+  line-height: 1.4;
+  margin-bottom: 0.15rem;
+`
+
+const BasicActionDesc = styled.div`
+  font-size: 0.8125rem;
+  color: ${c.textSec};
+  font-weight: 400;
   line-height: 1.4;
 `
 
@@ -131,8 +148,16 @@ const BasicTaskItem = styled.div<{ $status: DeadlineStatus }>`
   gap: 0.875rem;
   padding: 0.875rem 1.125rem;
   border-bottom: 1px solid ${c.borderLight};
-  background: ${({ $status }) => ($status === 'later' ? c.cardBg : STATUS_BG[$status])};
+  background: ${c.cardBg};
   &:last-child { border-bottom: none; }
+`
+
+const BasicTaskStatus = styled.span<{ $status: DeadlineStatus }>`
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: ${({ $status }) => STATUS_COLOR[$status]};
+  white-space: nowrap;
+  flex-shrink: 0;
 `
 
 const BasicTaskDot = styled.span<{ $status: DeadlineStatus }>`
@@ -169,6 +194,24 @@ const BasicHintBanner = styled.div`
   gap: 1rem;
 `
 
+const BasicHintIconWrap = styled.div`
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: ${c.yellow};
+`
+
+const BasicHintContent = styled.div`
+  flex: 1;
+  min-width: 0;
+`
+
+const BasicHintLabel = styled.div`
+  font-size: 0.75rem;
+  color: ${c.textTer};
+  margin-bottom: 0.2rem;
+`
+
 const BasicHintText = styled.div`
   font-size: 0.875rem;
   color: ${c.textSec};
@@ -184,7 +227,7 @@ function BasicView() {
   const pendingRequest = mockRequests.find(r => r.status === 'pending')
   const unreadCount = notifications.filter(n => !n.isRead).length
   const hintText = pendingRequest
-    ? `Заявка ${pendingRequest.id} ожидает согласования`
+    ? `Заявка ${pendingRequest.id} ожидает вашего согласования`
     : unreadCount > 0
       ? `У вас ${unreadCount} непрочитанных уведомления`
       : 'Вы недавно работали с документами'
@@ -197,11 +240,15 @@ function BasicView() {
 
       {/* Action block */}
       <BasicActionBlock>
-        <BasicActionLabel>
-          {activeTask
-            ? `Незавершённая задача: ${activeTask.title}`
-            : 'Можно начать работу'}
-        </BasicActionLabel>
+        <div>
+          <BasicActionCaption>Продолжите задачу</BasicActionCaption>
+          <BasicActionTitle>
+            {activeTask?.title ?? 'Можно начать работу'}
+          </BasicActionTitle>
+          {activeTask && (
+            <BasicActionDesc>{activeTask.description}</BasicActionDesc>
+          )}
+        </div>
         <Button
           view="secondary"
           size="m"
@@ -210,17 +257,24 @@ function BasicView() {
         />
       </BasicActionBlock>
 
-      {/* Today's tasks */}
+      {/* Task list */}
       <div>
-        <SecLabel>Что важно сегодня</SecLabel>
+        <SecLabel>В работе</SecLabel>
         <BasicTaskBlock>
-          {topTasks.map((t: Task) => {
+          {topTasks.map((t: Task, idx) => {
             const status = getDeadlineStatus(t.deadline)
+            const statusLabel =
+              idx === 0 ? `Сегодня · ${t.deadline}` :
+              idx === 1 ? `Скоро · ${t.deadline}` :
+              STATUS_TEXT[status]
             return (
               <BasicTaskItem key={t.id} $status={status}>
                 <BasicTaskDot $status={status} />
                 <BasicTaskTitle>{t.title}</BasicTaskTitle>
-                <BasicTaskDate $status={status}>{t.deadline}</BasicTaskDate>
+                <BasicTaskStatus $status={status}>{statusLabel}</BasicTaskStatus>
+                {idx >= 2 && (
+                  <BasicTaskDate $status={status}>{t.deadline}</BasicTaskDate>
+                )}
               </BasicTaskItem>
             )
           })}
@@ -229,10 +283,16 @@ function BasicView() {
 
       {/* Hint banner */}
       <BasicHintBanner>
-        <BasicHintText>💡 {hintText}</BasicHintText>
+        <BasicHintIconWrap>
+          <IconAttentionCircleOutline size="xs" color="currentColor" />
+        </BasicHintIconWrap>
+        <BasicHintContent>
+          <BasicHintLabel>Нужно проверить</BasicHintLabel>
+          <BasicHintText>{hintText}</BasicHintText>
+        </BasicHintContent>
         <Button
           view="secondary"
-          size="xs"
+          size="s"
           text={hintAction}
           onClick={() => navigate(hintRoute)}
         />
@@ -251,10 +311,49 @@ const StdRoot = styled.div`
   gap: 1.25rem;
 `
 
-const StdActions = styled.div`
+const StdHeading = styled.h2`
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: ${c.text};
+  letter-spacing: -0.02em;
+  margin-bottom: 0;
+`
+
+const StdSectionLabel = styled.div`
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+`
+
+const StdSectionHeader = styled.div`
   display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.625rem;
+`
+
+const StdChipsRow = styled.div`
+  display: flex;
+  gap: 0.375rem;
+`
+
+const StdActionChip = styled.button`
+  padding: 0.2rem 0.625rem;
+  border: 1px solid ${c.border};
+  border-radius: 20px;
+  background: transparent;
+  color: ${c.accent};
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.1s, border-color 0.12s;
+  &:hover {
+    background: ${c.accentBg};
+    border-color: ${c.accentBorder};
+  }
 `
 
 const StdLayout = styled.div`
@@ -270,7 +369,6 @@ const StdLeft = styled.div`
   gap: 1.25rem;
 `
 
-// Tasks list
 const StdTaskList = styled.div`
   background: ${c.cardBg};
   border: 1px solid ${c.border};
@@ -324,7 +422,6 @@ const StdTaskDate = styled.span`
   padding-top: 0.1rem;
 `
 
-// Documents row
 const StdDocsGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -357,7 +454,6 @@ const StdDocTitle = styled.div`
   line-height: 1.4;
 `
 
-// Notifications sidebar
 const StdNotifPanel = styled.div`
   background: ${c.cardBg};
   border: 1px solid ${c.border};
@@ -368,7 +464,9 @@ const StdNotifPanel = styled.div`
 const StdNotifItem = styled.div<{ $unread: boolean }>`
   padding: 0.75rem 1rem;
   border-bottom: 1px solid ${c.borderLight};
-  background: ${({ $unread }) => ($unread ? c.accentBg : c.cardBg)};
+  background: ${c.cardBg};
+  transition: background 0.1s;
+  &:hover { background: #f8f9fa; }
   &:last-child { border-bottom: none; }
 `
 
@@ -407,23 +505,25 @@ function StandardView() {
 
   return (
     <StdRoot>
-      <StdActions>
-        {quickActions.filter(a => a.command !== 'cmd').map(a => (
-          <Button
-            key={a.id}
-            size="s"
-            view="secondary"
-            text={a.label}
-            onClick={() => navigate(ACTION_ROUTES[a.command] ?? '/main')}
-          />
-        ))}
-      </StdActions>
+      <StdHeading>Сегодня в работе</StdHeading>
 
       <StdLayout>
         <StdLeft>
           {/* Active tasks */}
           <div>
-            <SecLabel>Активные задачи</SecLabel>
+            <StdSectionHeader>
+              <StdSectionLabel>Активные задачи</StdSectionLabel>
+              <StdChipsRow>
+                {quickActions.filter(a => a.command !== 'cmd').map(a => (
+                  <StdActionChip
+                    key={a.id}
+                    onClick={() => navigate(ACTION_ROUTES[a.command] ?? '/main')}
+                  >
+                    {a.label}
+                  </StdActionChip>
+                ))}
+              </StdChipsRow>
+            </StdSectionHeader>
             <StdTaskList>
               {tasks.map((t: Task) => (
                 <StdTaskRow key={t.id}>
@@ -440,7 +540,7 @@ function StandardView() {
 
           {/* Recent documents */}
           <div>
-            <SecLabel>Последние документы</SecLabel>
+            <StdSectionLabel style={{ marginBottom: '0.625rem' }}>Последние документы</StdSectionLabel>
             <StdDocsGrid>
               {recentDocs.map(doc => (
                 <StdDocCard key={doc.id} onClick={() => navigate('/documents')}>
@@ -454,7 +554,7 @@ function StandardView() {
 
         {/* Notifications */}
         <div>
-          <SecLabel>Уведомления</SecLabel>
+          <StdSectionLabel style={{ marginBottom: '0.625rem' }}>Уведомления</StdSectionLabel>
           <StdNotifPanel>
             {notifications.map((n: AppNotification) => (
               <StdNotifItem key={n.id} $unread={!n.isRead}>
@@ -478,86 +578,78 @@ function StandardView() {
 // EXPERT — «Где мои рычаги управления?»
 // ─────────────────────────────────────────────────────────────────────────────
 
-const EXPERT_METRIC_IDS = ['tasks', 'docs', 'requests', 'notifications'] as const
-
-const EXPERT_METRIC_LABELS: Record<string, string> = {
-  tasks:         'Задачи',
-  docs:          'Документы',
-  requests:      'Заявки',
-  notifications: 'Уведомления',
-}
-
-const EXPERT_METRIC_ROUTES: Record<string, string> = {
-  tasks:         '/tasks',
-  docs:          '/documents',
-  requests:      '/task',
-  notifications: '/main',
-}
-
 const PRIORITY_STATUS: Record<Task['priority'], { label: string; color: string }> = {
   high:   { label: 'Срочно',   color: c.red },
   normal: { label: 'В работе', color: c.yellow },
   low:    { label: 'Плановая', color: c.textTer },
 }
 
+const expertMetricValues = {
+  tasks:         sections.find(s => s.id === 'tasks')?.count ?? 0,
+  docs:          sections.find(s => s.id === 'docs')?.count ?? 0,
+  requests:      sections.find(s => s.id === 'requests')?.count ?? 0,
+  notifications: sections.find(s => s.id === 'notifications')?.count ?? 0,
+}
+
 const ExpertRoot = styled.div`
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  max-width: 800px;
+  max-width: 960px;
 `
 
-const ExpertActions = styled.div`
-  display: flex;
-  gap: 0.375rem;
-  flex-wrap: wrap;
+const ExpertHeading = styled.h3`
+  font-size: 1rem;
+  font-weight: 700;
+  color: ${c.text};
+  letter-spacing: -0.02em;
+  margin-bottom: 0;
 `
 
-const ExpertMetricsRow = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0;
-  background: ${c.cardBg};
-  border: 1px solid ${c.border};
-  border-radius: 10px;
-  overflow: hidden;
+const ExpertMetricsLine = styled.div`
+  font-size: 0.8125rem;
+  color: ${c.textSec};
 `
 
-const ExpertMetricItem = styled.button`
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 0.625rem 1rem;
-  border: none;
-  border-right: 1px solid ${c.border};
-  background: transparent;
-  cursor: pointer;
-  transition: background 0.1s;
-  &:last-child { border-right: none; }
-  &:hover { background: ${c.accentBg}; }
-`
-
-const ExpertMetricValue = styled.div`
-  font-size: 1.25rem;
+const ExpertMetricNum = styled.span`
   font-weight: 700;
   color: ${c.accent};
-  letter-spacing: -0.02em;
-  line-height: 1.2;
 `
 
-const ExpertMetricLabel = styled.div`
-  font-size: 0.6875rem;
+const ExpertMainGrid = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 220px;
+  gap: 1.25rem;
+  align-items: start;
+`
+
+const ExpertTaskHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+`
+
+const ExpertChipsRow = styled.div`
+  display: flex;
+  gap: 0.25rem;
+`
+
+const ExpertActionChip = styled.button`
+  padding: 0.15rem 0.5rem;
+  border: 1px solid ${c.border};
+  border-radius: 20px;
+  background: transparent;
+  color: ${c.accent};
+  font-size: 0.75rem;
   font-weight: 500;
-  color: ${c.textTer};
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-top: 0.125rem;
-`
-
-const ExpertDivider = styled.div`
-  height: 1px;
-  background: ${c.border};
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.1s, border-color 0.12s;
+  &:hover {
+    background: ${c.accentBg};
+    border-color: ${c.accentBorder};
+  }
 `
 
 const ExpertTable = styled.div`
@@ -586,8 +678,8 @@ const ExpertTableRow = styled.div`
   align-items: center;
   border-radius: 6px;
   cursor: pointer;
-  transition: background 0.1s;
-  &:hover { background: #eef2ff; }
+  transition: background 0.12s;
+  &:hover { background: #dde4ff; }
 `
 
 const ExpertRowTitle = styled.span`
@@ -597,6 +689,7 @@ const ExpertRowTitle = styled.span`
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  ${ExpertTableRow}:hover & { font-weight: 500; }
 `
 
 const ExpertRowStatus = styled.span<{ $color: string }>`
@@ -611,62 +704,86 @@ const ExpertRowDate = styled.span`
   color: ${c.textTer};
 `
 
-const expertMetrics = sections.filter(s => EXPERT_METRIC_IDS.includes(s.id as typeof EXPERT_METRIC_IDS[number]))
+const ExpertUpdatesPanel = styled.div`
+  display: flex;
+  flex-direction: column;
+`
+
+const ExpertUpdatesLabel = styled.div`
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: ${c.textTer};
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.5rem;
+`
+
+const ExpertUpdateItem = styled.div`
+  font-size: 0.75rem;
+  color: ${c.textSec};
+  line-height: 1.5;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid ${c.borderLight};
+  &:last-child { border-bottom: none; }
+`
 
 function ExpertView() {
   const navigate = useNavigate()
 
   return (
     <ExpertRoot>
-      <ExpertActions>
-        {quickActions.filter(a => a.command !== 'cmd').map(a => (
-          <Button
-            key={a.id}
-            size="xs"
-            view="secondary"
-            text={a.label}
-            onClick={() => navigate(ACTION_ROUTES[a.command] ?? '/main')}
-          />
-        ))}
-      </ExpertActions>
+      <ExpertHeading>Рабочая сводка</ExpertHeading>
 
-      {/* Metrics row */}
-      <ExpertMetricsRow>
-        {expertMetrics.map(s => (
-          <ExpertMetricItem
-            key={s.id}
-            onClick={() => navigate(EXPERT_METRIC_ROUTES[s.id] ?? '/main')}
-            title={EXPERT_METRIC_LABELS[s.id]}
-          >
-            <ExpertMetricValue>{s.count}</ExpertMetricValue>
-            <ExpertMetricLabel>{EXPERT_METRIC_LABELS[s.id]}</ExpertMetricLabel>
-          </ExpertMetricItem>
-        ))}
-      </ExpertMetricsRow>
+      <ExpertMetricsLine>
+        <ExpertMetricNum>{expertMetricValues.tasks}</ExpertMetricNum>{' задач · '}
+        <ExpertMetricNum>{expertMetricValues.docs}</ExpertMetricNum>{' документов · '}
+        <ExpertMetricNum>{expertMetricValues.requests}</ExpertMetricNum>{' заявки · '}
+        <ExpertMetricNum>{expertMetricValues.notifications}</ExpertMetricNum>{' уведомления'}
+      </ExpertMetricsLine>
 
-      <ExpertDivider />
+      <ExpertMainGrid>
+        {/* Tasks table */}
+        <div>
+          <ExpertTaskHeader>
+            <SecLabel style={{ marginBottom: 0 }}>Задачи</SecLabel>
+            <ExpertChipsRow>
+              {quickActions.filter(a => a.command !== 'cmd').map(a => (
+                <ExpertActionChip
+                  key={a.id}
+                  onClick={() => navigate(ACTION_ROUTES[a.command] ?? '/main')}
+                >
+                  {a.label}
+                </ExpertActionChip>
+              ))}
+            </ExpertChipsRow>
+          </ExpertTaskHeader>
+          <ExpertTable>
+            <ExpertTableHead>
+              <span>Название</span>
+              <span>Статус</span>
+              <span>Дата</span>
+            </ExpertTableHead>
+            {tasks.map((t: Task) => {
+              const ps = PRIORITY_STATUS[t.priority]
+              return (
+                <ExpertTableRow key={t.id} onClick={() => navigate('/task')}>
+                  <ExpertRowTitle title={t.title}>{t.title}</ExpertRowTitle>
+                  <ExpertRowStatus $color={ps.color}>{ps.label}</ExpertRowStatus>
+                  <ExpertRowDate>{t.deadline}</ExpertRowDate>
+                </ExpertTableRow>
+              )
+            })}
+          </ExpertTable>
+        </div>
 
-      {/* Tasks table */}
-      <div>
-        <SecLabel>Задачи</SecLabel>
-        <ExpertTable>
-          <ExpertTableHead>
-            <span>Название</span>
-            <span>Статус</span>
-            <span>Дата</span>
-          </ExpertTableHead>
-          {tasks.map((t: Task) => {
-            const ps = PRIORITY_STATUS[t.priority]
-            return (
-              <ExpertTableRow key={t.id} onClick={() => navigate('/task')}>
-                <ExpertRowTitle title={t.title}>{t.title}</ExpertRowTitle>
-                <ExpertRowStatus $color={ps.color}>{ps.label}</ExpertRowStatus>
-                <ExpertRowDate>{t.deadline}</ExpertRowDate>
-              </ExpertTableRow>
-            )
-          })}
-        </ExpertTable>
-      </div>
+        {/* Updates sidebar */}
+        <ExpertUpdatesPanel>
+          <ExpertUpdatesLabel>Обновления</ExpertUpdatesLabel>
+          {notifications.map((n: AppNotification) => (
+            <ExpertUpdateItem key={n.id}>{n.text}</ExpertUpdateItem>
+          ))}
+        </ExpertUpdatesPanel>
+      </ExpertMainGrid>
     </ExpertRoot>
   )
 }

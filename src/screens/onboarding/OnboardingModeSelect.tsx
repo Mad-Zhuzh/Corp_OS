@@ -485,6 +485,7 @@ export function OnboardingModeSelect() {
   }
 
   function handleSkip() {
+    localStorage.setItem('corpOsOnboarded', '1')
     setMode('standard')
     navigate('/main', {
       state: {

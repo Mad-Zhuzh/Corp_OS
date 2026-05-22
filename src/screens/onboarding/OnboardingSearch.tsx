@@ -91,7 +91,7 @@ export function OnboardingSearch() {
           Введите название или несколько слов из него в строку поиска вверху страницы и нажмите Enter.
         </TaskHint>
       </TaskCard>
-      <SkipLink onClick={() => navigate('/main')}>
+      <SkipLink onClick={() => { localStorage.setItem('corpOsOnboarded', '1'); navigate('/main') }}>
         Пропустить задание — перейти к работе
       </SkipLink>
     </Root>

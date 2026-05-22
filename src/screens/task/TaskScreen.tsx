@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import styled from 'styled-components'
 import { Button } from '@salutejs/plasma-web'
 import { useNavigate } from 'react-router-dom'
 import { useUserMode } from '../../context/UserModeContext'
+import { useOpenObjects } from '../../context/OpenObjectsContext'
 import {
   taskServices,
   taskDurations,
@@ -898,6 +899,17 @@ function ExpertTaskView({ form, update, errors, taskState, requests, onReview, o
 export function TaskScreen() {
   const { mode } = useUserMode()
   const navigate = useNavigate()
+  const { openObject } = useOpenObjects()
+
+  useEffect(() => {
+    openObject({
+      id: 'task-form',
+      type: 'form',
+      label: 'Новая заявка',
+      fullLabel: 'Форма создания заявки на доступ',
+      route: '/task',
+    })
+  }, [openObject])
 
   const [form, setForm] = useState<FormData>({ service: '', purpose: '', duration: '', comment: '' })
   const [errors, setErrors] = useState<FormErrors>({})

@@ -1,4 +1,5 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, useNavigate } from 'react-router-dom'
+import { useEffect } from 'react'
 import { AppLayout } from './components/layout/AppLayout'
 import { MainScreen } from './screens/main/MainScreen'
 import { SearchScreen } from './screens/search/SearchScreen'
@@ -10,12 +11,22 @@ import { StubScreen } from './screens/stub/StubScreen'
 import { FilesScreen } from './screens/files/FilesScreen'
 import { HelpScreen } from './screens/help/HelpScreen'
 import { OnboardingSearch } from './screens/onboarding/OnboardingSearch'
+import { DocumentScreen } from './screens/document/DocumentScreen'
+
+function RootRedirect() {
+  const navigate = useNavigate()
+  useEffect(() => {
+    const done = localStorage.getItem('corpOsOnboarded')
+    navigate(done ? '/main' : '/onboarding', { replace: true })
+  }, [navigate])
+  return null
+}
 
 function App() {
   return (
     <Routes>
       <Route element={<AppLayout />}>
-        <Route path="/" element={<Navigate to="/main" replace />} />
+        <Route path="/" element={<RootRedirect />} />
         <Route path="/main" element={<MainScreen />} />
         <Route path="/search" element={<SearchScreen />} />
         <Route path="/task" element={<TaskScreen />} />
@@ -24,6 +35,7 @@ function App() {
         <Route path="/onboarding/tour" element={<OnboardingTour />} />
         <Route path="/tasks" element={<StubScreen section="Задачи" />} />
         <Route path="/documents" element={<FilesScreen />} />
+        <Route path="/document" element={<DocumentScreen />} />
         <Route path="/projects" element={<StubScreen section="Проекты" />} />
         <Route path="/services" element={<StubScreen section="Сервисы" />} />
         <Route path="/team" element={<StubScreen section="Команда" />} />

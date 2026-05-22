@@ -71,6 +71,7 @@ export function OnboardingWelcome() {
   const { setMode } = useUserMode()
 
   function handleSkip() {
+    localStorage.setItem('corpOsOnboarded', '1')
     setMode('standard')
     navigate('/main', {
       state: {
