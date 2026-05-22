@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\user\\\\Desktop\\\\VS Code\\\\CorpOS\" -Recurse -Force)",
+      "Bash(Select-Object FullName)",
+      "Bash(Format-Table -HideTableHeaders)",
+      "Bash(Sort-Object)",
+      "Bash(npx tsc *)",
+      "Bash(npm run *)",
+      "Bash(node -e \"const icons = require\\('./node_modules/@salutejs/plasma-icons/index.js'\\); const keys = Object.keys\\(icons\\).filter\\(k => k.startsWith\\('Icon'\\)\\); console.log\\(keys.slice\\(0, 60\\).join\\('\\\\n'\\)\\)\")",
+      "Bash(node -e \"const icons = require\\('./node_modules/@salutejs/plasma-icons/index.js'\\); const keys = Object.keys\\(icons\\).filter\\(k => k.startsWith\\('Icon'\\)\\); console.log\\(keys.slice\\(60\\).join\\('\\\\n'\\)\\)\")"
+    ]
+  }
+}
