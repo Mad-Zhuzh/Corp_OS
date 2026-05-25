@@ -1,32 +1,16 @@
-import { useMemo } from 'react'
 import styled from 'styled-components'
 import { useUserMode } from '../../context/UserModeContext'
 import {
-  searchResults,
-  dropdownData,
-  type SearchResult,
-} from '../../data/mockData'
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const CAT_LABEL: Record<string, string> = {
-  document: 'Документ',
-  service:  'Сервис',
-  action:   'Действие',
-  section:  'Раздел',
-}
-
-function getDropdownResults(query: string): SearchResult[] {
-  if (query.length < 1) return []
-  const q = query.toLowerCase()
-  return searchResults
-    .filter(r =>
-      r.title.toLowerCase().includes(q) ||
-      r.description.toLowerCase().includes(q) ||
-      r.alias.toLowerCase().includes(q),
-    )
-    .slice(0, 5)
-}
+  SEARCH_DOC,
+  EXPERT_OPERATORS,
+  DD_RECENT,
+  DD_EXAMPLES_BASIC,
+  DD_ACTIONS,
+  isSearchMatch,
+  isExpertMatch,
+  isOperatorPrefix,
+} from '../../data/searchMockData'
+import type { SearchResult } from '../../data/mockData'
 
 // ─── Styled components ────────────────────────────────────────────────────────
 
@@ -54,6 +38,13 @@ const DDLabel = styled.div`
   text-transform: uppercase;
   letter-spacing: 0.08em;
   padding: 0.5rem 0.875rem 0.25rem;
+`
+
+const DDHint = styled.div`
+  font-size: 0.8125rem;
+  color: #6b7280;
+  padding: 0.5rem 0.875rem 0.25rem;
+  font-style: italic;
 `
 
 const DDDivider = styled.div`
@@ -93,7 +84,7 @@ const DDActionBtn = styled.button`
 `
 
 const DDEmpty = styled.div`
-  padding: 0.875rem 0.875rem;
+  padding: 0.875rem;
   font-size: 0.875rem;
   color: #9ca3af;
 `
@@ -116,50 +107,93 @@ const DDAllResultsBtn = styled.button`
   &:hover { background: #eef2ff; }
 `
 
-// Basic: row layout (кликабельная строка)
-const DDCardBtn = styled.button`
+// ─── Basic: large card suggestion ─────────────────────────────────────────────
+
+const DDBasicCard = styled.div`
+  margin: 0.5rem 0.75rem;
+  background: #f5f3ff;
+  border: 1px solid #c7d2fe;
+  border-radius: 10px;
+  padding: 0.875rem 1rem;
   display: flex;
-  flex-direction: column;
   align-items: flex-start;
-  gap: 0.15rem;
-  width: 100%;
-  padding: 0.625rem 0.875rem;
-  background: transparent;
-  border: none;
-  border-bottom: 1px solid #f0f2f5;
-  text-align: left;
-  cursor: pointer;
-  font-family: inherit;
-  &:hover { background: #f8f9fa; }
-  &:last-of-type { border-bottom: none; }
+  gap: 0.875rem;
 `
 
-const DDCardTitle = styled.div`
+const DDBasicCardIcon = styled.div`
+  width: 36px;
+  height: 36px;
+  background: #fee2e2;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: #b91c1c;
+  flex-shrink: 0;
+`
+
+const DDBasicCardBody = styled.div`
+  flex: 1;
+  min-width: 0;
+`
+
+const DDBasicCardTitle = styled.div`
   font-size: 0.875rem;
   font-weight: 600;
   color: #1a1a1a;
+  margin-bottom: 0.125rem;
 `
 
-const DDCardShortDesc = styled.div`
+const DDBasicCardMeta = styled.div`
   font-size: 0.8125rem;
   color: #6b7280;
+  margin-bottom: 0.625rem;
 `
 
-// Standard: row layout
+const DDBasicCardBtn = styled.button`
+  background: #4f46e5;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.1s;
+  &:hover { background: #4338ca; }
+`
+
+// ─── Standard: compact row ────────────────────────────────────────────────────
+
 const DDRowBtn = styled.button`
   display: flex;
-  align-items: baseline;
-  gap: 0.75rem;
+  align-items: center;
+  gap: 0.625rem;
   width: 100%;
   padding: 0.625rem 0.875rem;
   background: transparent;
   border: none;
-  border-bottom: 1px solid #f0f2f5;
   text-align: left;
   cursor: pointer;
   font-family: inherit;
   &:hover { background: #f8f9fa; }
-  &:last-of-type { border-bottom: none; }
+`
+
+const DDRowIcon = styled.div`
+  width: 24px;
+  height: 24px;
+  background: #fee2e2;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.5625rem;
+  font-weight: 700;
+  color: #b91c1c;
+  flex-shrink: 0;
 `
 
 const DDRowTitle = styled.span`
@@ -167,53 +201,69 @@ const DDRowTitle = styled.span`
   font-weight: 500;
   color: #1a1a1a;
   flex: 1;
-  text-align: left;
 `
 
 const DDRowMeta = styled.span`
   font-size: 0.8125rem;
-  color: #6b7280;
+  color: #9ca3af;
   white-space: nowrap;
 `
 
-// Expert: dense list
-const DDExpertBtn = styled.button`
+// ─── Expert: operator list ────────────────────────────────────────────────────
+
+const DDOpRow = styled.button`
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.4rem 0.875rem;
+  background: transparent;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  &:hover { background: #f5f3ff; }
+`
+
+const DDOpCode = styled.span`
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #4f46e5;
+  font-family: 'SF Mono', Consolas, 'Courier New', monospace;
+  white-space: nowrap;
+  width: 80px;
+  flex-shrink: 0;
+`
+
+const DDOpDesc = styled.span`
+  font-size: 0.8125rem;
+  color: #6b7280;
+`
+
+const DDExpertRow = styled.button`
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 0.5rem;
   width: 100%;
   padding: 0.5rem 0.875rem;
   background: transparent;
   border: none;
-  border-bottom: 1px solid #f0f2f5;
   text-align: left;
   cursor: pointer;
   font-family: inherit;
   &:hover { background: #f8f9fa; }
-  &:last-of-type { border-bottom: none; }
-`
-
-const DDExpertLeft = styled.div`
-  display: flex;
-  align-items: baseline;
-  gap: 0.5rem;
-  flex: 1;
-  min-width: 0;
 `
 
 const DDExpertTitle = styled.span`
   font-size: 0.8125rem;
   color: #1a1a1a;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  flex: 1;
 `
 
-const DDExpertType = styled.span`
+const DDExpertMeta = styled.span`
   font-size: 0.75rem;
   color: #9ca3af;
   white-space: nowrap;
-  flex-shrink: 0;
 `
 
 const DDEnterBadge = styled.span`
@@ -235,6 +285,7 @@ interface SearchDropdownProps {
   onResultSelect: (result: SearchResult) => void
   onAllResults: () => void
   onActionSelect: (nav: string) => void
+  onDocOpen?: () => void
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -242,115 +293,162 @@ interface SearchDropdownProps {
 export function SearchDropdown({
   query,
   onQueryChange,
-  onResultSelect,
   onAllResults,
   onActionSelect,
+  onDocOpen,
 }: SearchDropdownProps) {
   const { mode } = useUserMode()
-  const data = dropdownData[mode]
-  const instantResults = useMemo(() => getDropdownResults(query), [query])
   const hasQuery = query.length > 0
+  const recent = DD_RECENT[mode]
+
+  // ── BASIC ──────────────────────────────────────────────────────────────────
+  if (mode === 'basic') {
+    const matched = hasQuery && isSearchMatch(query)
+    return (
+      <DropdownBox>
+        {!hasQuery && (
+          <>
+            <DDSection>
+              <DDLabel>Можно искать обычными словами</DDLabel>
+              {DD_EXAMPLES_BASIC.map(ex => (
+                <DDRecentBtn key={ex} onClick={() => onQueryChange(ex)}>{ex}</DDRecentBtn>
+              ))}
+            </DDSection>
+            <DDDivider />
+            <DDSection>
+              <DDLabel>Недавние запросы</DDLabel>
+              {recent.map(r => (
+                <DDRecentBtn key={r} onClick={() => onQueryChange(r)}>{r}</DDRecentBtn>
+              ))}
+            </DDSection>
+          </>
+        )}
+
+        {hasQuery && matched && (
+          <>
+            <DDHint>Кажется, вы ищете документ о компенсациях</DDHint>
+            <DDBasicCard>
+              <DDBasicCardIcon>PDF</DDBasicCardIcon>
+              <DDBasicCardBody>
+                <DDBasicCardTitle>{SEARCH_DOC.shortName}</DDBasicCardTitle>
+                <DDBasicCardMeta>Документ · страница {SEARCH_DOC.page}</DDBasicCardMeta>
+                <DDBasicCardBtn onClick={onDocOpen}>Открыть нужное место</DDBasicCardBtn>
+              </DDBasicCardBody>
+            </DDBasicCard>
+          </>
+        )}
+
+        {hasQuery && !matched && (
+          <DDEmpty>Ничего не найдено. Попробуйте написать иначе.</DDEmpty>
+        )}
+
+        {hasQuery && (
+          <DDAllResultsBtn onClick={onAllResults}>
+            <span>Все результаты по запросу «{query}» →</span>
+          </DDAllResultsBtn>
+        )}
+      </DropdownBox>
+    )
+  }
+
+  // ── STANDARD ───────────────────────────────────────────────────────────────
+  if (mode === 'standard') {
+    const matched = hasQuery && isSearchMatch(query)
+    const actions = DD_ACTIONS.standard
+    return (
+      <DropdownBox>
+        {!hasQuery && (
+          <>
+            <DDSection>
+              <DDLabel>Недавние запросы</DDLabel>
+              {recent.map(r => (
+                <DDRecentBtn key={r} onClick={() => onQueryChange(r)}>{r}</DDRecentBtn>
+              ))}
+            </DDSection>
+            <DDDivider />
+            <DDSection>
+              <DDLabel>Быстрые действия</DDLabel>
+              {actions.map(a => (
+                <DDActionBtn key={a.label} onClick={() => onActionSelect(a.nav)}>{a.label}</DDActionBtn>
+              ))}
+            </DDSection>
+          </>
+        )}
+
+        {hasQuery && matched && (
+          <DDRowBtn onClick={onAllResults}>
+            <DDRowIcon>PDF</DDRowIcon>
+            <DDRowTitle>{SEARCH_DOC.shortName}</DDRowTitle>
+            <DDRowMeta>страница {SEARCH_DOC.page}</DDRowMeta>
+          </DDRowBtn>
+        )}
+
+        {hasQuery && !matched && (
+          <DDEmpty>Ничего не найдено</DDEmpty>
+        )}
+
+        {hasQuery && (
+          <DDAllResultsBtn onClick={onAllResults}>
+            <span>Все результаты по запросу «{query}» →</span>
+          </DDAllResultsBtn>
+        )}
+      </DropdownBox>
+    )
+  }
+
+  // ── EXPERT ─────────────────────────────────────────────────────────────────
+  const isOpPrefix = hasQuery && isOperatorPrefix(query)
+  const matched    = hasQuery && isExpertMatch(query)
+  const actions    = DD_ACTIONS.expert
 
   return (
     <DropdownBox>
-      {/* ── Empty state ─────────────────────────────────────────────────── */}
-      {!hasQuery && mode === 'basic' && (
+      {!hasQuery && (
         <>
           <DDSection>
-            <DDLabel>Можно искать обычными словами</DDLabel>
-            {data.examples?.map(ex => (
-              <DDRecentBtn key={ex} onClick={() => onQueryChange(ex)}>{ex}</DDRecentBtn>
+            <DDLabel>Недавние</DDLabel>
+            {recent.map(r => (
+              <DDRecentBtn key={r} onClick={() => onQueryChange(r)}>{r}</DDRecentBtn>
             ))}
           </DDSection>
           <DDDivider />
           <DDSection>
-            <DDLabel>Недавние запросы</DDLabel>
-            {data.recent.map(r => (
-              <DDRecentBtn key={r} onClick={() => onQueryChange(r)}>{r}</DDRecentBtn>
+            <DDLabel>Действия</DDLabel>
+            {actions.map(a => (
+              <DDActionBtn key={a.label} onClick={() => onActionSelect(a.nav)}>{a.label}</DDActionBtn>
             ))}
           </DDSection>
         </>
       )}
 
-      {!hasQuery && mode === 'standard' && (
+      {isOpPrefix && (
         <>
           <DDSection>
-            <DDLabel>Недавние запросы</DDLabel>
-            {data.recent.map(r => (
-              <DDRecentBtn key={r} onClick={() => onQueryChange(r)}>{r}</DDRecentBtn>
+            <DDLabel>Доступные операторы:</DDLabel>
+            {EXPERT_OPERATORS.map(o => (
+              <DDOpRow key={o.op} onClick={() => onQueryChange(o.op + ' ')}>
+                <DDOpCode>{o.op}</DDOpCode>
+                <DDOpDesc>{o.desc}</DDOpDesc>
+              </DDOpRow>
             ))}
           </DDSection>
-          {data.actions && (
-            <>
-              <DDDivider />
-              <DDSection>
-                <DDLabel>Быстрые действия</DDLabel>
-                {data.actions.map(a => (
-                  <DDActionBtn key={a.label} onClick={() => onActionSelect(a.nav)}>{a.label}</DDActionBtn>
-                ))}
-              </DDSection>
-            </>
-          )}
         </>
       )}
 
-      {!hasQuery && mode === 'expert' && (
-        <>
-          <DDSection>
-            <DDLabel>Недавние</DDLabel>
-            {data.recent.map(r => (
-              <DDRecentBtn key={r} onClick={() => onQueryChange(r)}>{r}</DDRecentBtn>
-            ))}
-          </DDSection>
-          {data.actions && (
-            <>
-              <DDDivider />
-              <DDSection>
-                <DDLabel>Действия</DDLabel>
-                {data.actions.map(a => (
-                  <DDActionBtn key={a.label} onClick={() => onActionSelect(a.nav)}>{a.label}</DDActionBtn>
-                ))}
-              </DDSection>
-            </>
-          )}
-        </>
+      {hasQuery && !isOpPrefix && matched && (
+        <DDExpertRow onClick={onAllResults}>
+          <DDRowIcon>PDF</DDRowIcon>
+          <DDExpertTitle>{SEARCH_DOC.name}</DDExpertTitle>
+          <DDExpertMeta>стр. {SEARCH_DOC.page}</DDExpertMeta>
+          <DDEnterBadge>Enter</DDEnterBadge>
+        </DDExpertRow>
       )}
 
-      {/* ── Instant suggestions ─────────────────────────────────────────── */}
-      {hasQuery && instantResults.length > 0 && (
-        <>
-          {mode === 'basic' && instantResults.map(r => (
-            <DDCardBtn key={r.id} onClick={() => onResultSelect(r)}>
-              <DDCardTitle>{r.title}</DDCardTitle>
-              <DDCardShortDesc>{r.shortDesc}</DDCardShortDesc>
-            </DDCardBtn>
-          ))}
-
-          {mode === 'standard' && instantResults.map(r => (
-            <DDRowBtn key={r.id} onClick={() => onResultSelect(r)}>
-              <DDRowTitle>{r.title}</DDRowTitle>
-              <DDRowMeta>{CAT_LABEL[r.category]} · {r.shortDesc}</DDRowMeta>
-            </DDRowBtn>
-          ))}
-
-          {mode === 'expert' && instantResults.map((r, i) => (
-            <DDExpertBtn key={r.id} onClick={() => onResultSelect(r)}>
-              <DDExpertLeft>
-                <DDExpertTitle>{r.title}</DDExpertTitle>
-                <DDExpertType>— {CAT_LABEL[r.category]}</DDExpertType>
-              </DDExpertLeft>
-              {i === 0 && <DDEnterBadge>Enter</DDEnterBadge>}
-            </DDExpertBtn>
-          ))}
-        </>
+      {hasQuery && !isOpPrefix && !matched && (
+        <DDEmpty>Не найдено</DDEmpty>
       )}
 
-      {hasQuery && instantResults.length === 0 && (
-        <DDEmpty>Ничего не найдено</DDEmpty>
-      )}
-
-      {/* ── All results link ─────────────────────────────────────────────── */}
-      {hasQuery && (
+      {hasQuery && !isOpPrefix && (
         <DDAllResultsBtn onClick={onAllResults}>
           <span>Все результаты по запросу «{query}» →</span>
         </DDAllResultsBtn>

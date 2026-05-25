@@ -192,10 +192,12 @@ const BasicCard = styled.div`
   border: 1px solid ${c.border};
   border-radius: 12px;
   padding: 1.125rem 1.375rem;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   display: flex;
   flex-direction: column;
   gap: 0.875rem;
+  transition: box-shadow 200ms ease;
+  &:hover { box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06); }
 `
 
 const BasicActionTitle = styled.div`
@@ -218,6 +220,9 @@ const BasicTaskBlock = styled.div`
   border: 1px solid ${c.border};
   border-radius: 14px;
   overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 200ms ease;
+  &:hover { box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06); }
 `
 
 const BasicTaskItem = styled.div<{ $status: DeadlineStatus }>`
@@ -384,7 +389,9 @@ const StdCard = styled.div`
   border: 1px solid ${c.border};
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 200ms ease;
+  &:hover { box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06); }
 `
 
 const StdCardHeader = styled.div`
@@ -492,8 +499,9 @@ const StdDocCard = styled.div`
   border-radius: 10px;
   padding: 0.75rem 0.875rem;
   cursor: pointer;
-  transition: box-shadow 0.12s;
-  &:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 200ms ease;
+  &:hover { box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06); }
 `
 
 const StdDocLabel = styled.div`
@@ -942,7 +950,9 @@ const ExpertCard = styled.div`
   border: 1px solid ${c.border};
   border-radius: 12px;
   padding: 1rem;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 200ms ease;
+  &:hover { box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06); }
 `
 
 const ExpertMailClose = styled.button`

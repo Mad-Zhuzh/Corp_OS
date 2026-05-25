@@ -24,11 +24,29 @@ import {
   IconInfoCircleOutline,
   IconSearch,
   IconCardsGridOutline,
+  IconWifiDefault,
+  IconMailOutline,
+  IconProfileOutline,
 } from '@salutejs/plasma-icons'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const HEADER_H = 56
+
+const RU_MONTHS   = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь']
+const RU_MON_GEN  = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря']
+const RU_DAYS_HDR = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс']
+const RU_DAY_ABR  = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб']
+
+function buildCalendarCells(year: number, month: number): (number | null)[] {
+  const firstDow = new Date(year, month, 1).getDay()
+  const offset   = firstDow === 0 ? 6 : firstDow - 1
+  const days     = new Date(year, month + 1, 0).getDate()
+  const cells: (number | null)[] = Array(offset).fill(null)
+  for (let d = 1; d <= days; d++) cells.push(d)
+  while (cells.length % 7 !== 0) cells.push(null)
+  return cells
+}
 const SIDEBAR_BASIC = 240
 const SIDEBAR_STD = 220
 const SIDEBAR_MIN = 56
@@ -40,18 +58,20 @@ interface NavItemDef {
   label: string
   Icon: FC<IconProps>
   path: string
+  badge?: number
 }
 
 const NAV_ITEMS: NavItemDef[] = [
-  { id: 'main',      label: 'Рабочая среда',   Icon: IconHouseOutline,      path: '/main' },
-  { id: 'tasks',     label: 'Задачи',          Icon: IconTaskHorizOutline,  path: '/tasks' },
-  { id: 'documents', label: 'Файлы и документы', Icon: IconDocumentOutline,   path: '/documents' },
-  { id: 'task',      label: 'Заявки',          Icon: IconDocumentAddOutline,path: '/task' },
-  { id: 'projects',  label: 'Проекты',         Icon: IconFolderOutline,     path: '/projects' },
-  { id: 'services',  label: 'Сервисы',         Icon: IconAppsOutline,       path: '/services' },
-  { id: 'team',      label: 'Команда',         Icon: IconPeopleGroupOutline, path: '/team' },
-  { id: 'settings',  label: 'Настройки',       Icon: IconSettingsOutline,   path: '/settings' },
-  { id: 'help',      label: 'Помощь',          Icon: IconInfoCircleOutline, path: '/help' },
+  { id: 'main',      label: 'Рабочая среда',     Icon: IconHouseOutline,       path: '/main' },
+  { id: 'tasks',     label: 'Задачи',            Icon: IconTaskHorizOutline,   path: '/tasks' },
+  { id: 'documents', label: 'Файлы и документы', Icon: IconDocumentOutline,    path: '/documents' },
+  { id: 'task',      label: 'Заявки',            Icon: IconDocumentAddOutline, path: '/task' },
+  { id: 'projects',  label: 'Проекты',           Icon: IconFolderOutline,      path: '/projects' },
+  { id: 'services',  label: 'Сервисы',           Icon: IconAppsOutline,        path: '/services' },
+  { id: 'team',      label: 'Команда',           Icon: IconPeopleGroupOutline,  path: '/team' },
+  { id: 'mail',      label: 'Почта',             Icon: IconMailOutline,         path: '/mail', badge: 2 },
+  { id: 'settings',  label: 'Настройки',         Icon: IconSettingsOutline,    path: '/settings' },
+  { id: 'help',      label: 'Помощь',            Icon: IconInfoCircleOutline,  path: '/help' },
 ]
 
 // ─── Breadcrumb map ───────────────────────────────────────────────────────────
@@ -128,8 +148,8 @@ const ShellRoot = styled.div`
 const HeaderEl = styled.header`
   height: ${HEADER_H}px;
   min-height: ${HEADER_H}px;
-  background: #ffffff;
-  border-bottom: 1px solid #e2e8f0;
+  background: #F0F2F5;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.05);
   display: flex;
   align-items: center;
   padding: 0 1.5rem 0 1rem;
@@ -176,14 +196,14 @@ const SearchInputRow = styled.div`
   display: flex;
   align-items: center;
   height: 34px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid transparent;
   border-radius: 8px;
-  background: #f8f9fa;
-  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  transition: border-color 0.2s, box-shadow 0.2s;
   &:focus-within {
-    border-color: #a5b4fc;
-    background: #fff;
-    box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+    border-color: rgba(99,102,241,0.4);
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
   }
 `
 
@@ -219,7 +239,7 @@ const SearchIconBtn = styled.button`
 const HeaderRight = styled.div`
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 1rem;
   flex-shrink: 0;
 `
 
@@ -233,23 +253,23 @@ const ModePill = styled.button<{ $open: boolean; $highlighted?: boolean }>`
   display: flex;
   align-items: center;
   gap: 0.375rem;
-  padding: 0.25rem 0.5rem 0.25rem 0.5rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 20px;
-  background: ${({ $open }) => ($open ? '#f0f2f5' : '#ffffff')};
+  padding: 0.25rem 0.625rem;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: ${({ $open }) => ($open ? '#d1d5db' : '#e5e7eb')};
   color: #1a1a1a;
   font-size: 0.8125rem;
   font-weight: 500;
   cursor: pointer;
   white-space: nowrap;
-  transition: background 0.1s, border-color 0.2s;
+  transition: background 0.1s;
   height: 32px;
-  &:hover { background: #f0f2f5; border-color: #d1d5db; }
+  &:hover { background: #d1d5db; }
 `
 
 const ModeDot = styled.span<{ $color: string }>`
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: ${({ $color }) => $color};
   flex-shrink: 0;
@@ -340,7 +360,7 @@ const NotifBadge = styled.span`
   min-width: 16px;
   height: 16px;
   padding: 0 3px;
-  background: #ef4444;
+  background: #4f46e5;
   color: #fff;
   font-size: 0.625rem;
   font-weight: 700;
@@ -354,22 +374,159 @@ const NotifBadge = styled.span`
 // ─── Avatar ───────────────────────────────────────────────────────────────────
 
 const AvatarBtn = styled.button`
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  background: #4f46e5;
-  color: #ffffff;
-  font-size: 0.6875rem;
-  font-weight: 700;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: transparent;
+  color: #6b7280;
   border: none;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  letter-spacing: 0.02em;
-  transition: opacity 0.1s;
+  transition: background 0.1s;
   user-select: none;
-  &:hover { opacity: 0.85; }
+  &:hover { background: rgba(0,0,0,0.06); }
+`
+
+// ─── Header icon button (network, avatar wrapper) ────────────────────────────
+
+const HdrIconBtn = styled.button`
+  position: relative;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.1s;
+  &:hover { background: rgba(0,0,0,0.06); }
+`
+
+// ─── Tooltip ──────────────────────────────────────────────────────────────────
+
+const TooltipWrap = styled.div`
+  position: relative;
+  display: flex;
+  align-items: center;
+`
+
+const TooltipBox = styled.div`
+  position: absolute;
+  top: calc(100% + 7px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1a1a1a;
+  color: #fff;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 6px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 400;
+`
+
+// ─── Clock widget ─────────────────────────────────────────────────────────────
+
+const ClockWrap = styled.div`
+  position: relative;
+  display: flex;
+  align-items: center;
+  cursor: default;
+  padding: 0 0.25rem;
+`
+
+const ClockInner = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.2;
+`
+
+const ClockTime = styled.div`
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+`
+
+const ClockDate = styled.div`
+  font-size: 0.6875rem;
+  color: #6b7280;
+`
+
+const CalPopover = styled.div`
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+  padding: 0.875rem 1rem;
+  z-index: 400;
+  width: 220px;
+`
+
+const CalTitle = styled.div`
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  text-align: center;
+  margin-bottom: 0.625rem;
+`
+
+const CalGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+`
+
+const CalHeadCell = styled.div`
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: #9ca3af;
+  text-align: center;
+  padding: 0.125rem 0;
+`
+
+const CalDayCell = styled.div<{ $today?: boolean; $empty?: boolean }>`
+  font-size: 0.75rem;
+  text-align: center;
+  padding: 0.2rem 0;
+  border-radius: 50%;
+  color: ${({ $today }) => ($today ? '#ffffff' : '#374151')};
+  background: ${({ $today }) => ($today ? '#4f46e5' : 'transparent')};
+  font-weight: ${({ $today }) => ($today ? '700' : '400')};
+  visibility: ${({ $empty }) => ($empty ? 'hidden' : 'visible')};
+`
+
+// ─── Sidebar nav badge ────────────────────────────────────────────────────────
+
+const NavBadge = styled.span<{ $floating?: boolean }>`
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  background: #4f46e5;
+  color: #fff;
+  font-size: 0.5625rem;
+  font-weight: 700;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  ${({ $floating }) => $floating && css`
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    min-width: 14px;
+    height: 14px;
+  `}
 `
 
 // ─── Body ─────────────────────────────────────────────────────────────────────
@@ -484,6 +641,7 @@ const NavIcon = styled.span<{ $basic: boolean }>`
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  position: relative;
   width: ${({ $basic }) => ($basic ? '24px' : '20px')};
 `
 
@@ -500,7 +658,7 @@ const ContentArea = styled.div<{ $highlighted?: boolean; $editMode?: boolean }>`
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: ${({ $editMode }) => ($editMode ? '#c8cdd8' : '#f0f2f5')};
+  background: ${({ $editMode }) => ($editMode ? '#c8cdd8' : 'linear-gradient(180deg, #F6F8FB 0%, #EEF2F7 100%)')};
   transition: background 0.2s;
   min-width: 0;
   position: relative;
@@ -601,10 +759,12 @@ const BCSep = styled.span`
   user-select: none;
 `
 
-const ContentScroll = styled.div`
+const ContentScroll = styled.div<{ $fading?: boolean }>`
   flex: 1;
   overflow-y: auto;
   padding: 1.5rem;
+  opacity: ${({ $fading }) => ($fading ? 0 : 1)};
+  transition: opacity 150ms ease;
 `
 
 const ContentInner = styled.div`
@@ -650,6 +810,28 @@ export function AppLayout() {
   const [isEditMode, setIsEditMode] = useState(false)
   const [editMenuOpen, setEditMenuOpen] = useState(false)
   const editMenuRef = useRef<HTMLDivElement>(null)
+  const [fading, setFading] = useState(false)
+  const prevModeRef = useRef(mode)
+  const [now, setNow] = useState(() => new Date())
+  const [clockHover, setClockHover] = useState(false)
+  const [netHover, setNetHover] = useState(false)
+  const [notifHover, setNotifHover] = useState(false)
+  const [avatarHover, setAvatarHover] = useState(false)
+
+  // content fade on mode change
+  useEffect(() => {
+    if (prevModeRef.current === mode) return
+    prevModeRef.current = mode
+    setFading(true)
+    const t = setTimeout(() => setFading(false), 150)
+    return () => clearTimeout(t)
+  }, [mode])
+
+  // clock tick
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000)
+    return () => clearInterval(id)
+  }, [])
 
   // show pending toast passed via router state
   useEffect(() => {
@@ -795,11 +977,58 @@ export function AppLayout() {
                 onResultSelect={handleResultSelect}
                 onAllResults={handleNavigateToResults}
                 onActionSelect={handleActionSelect}
+                onDocOpen={() => {
+                  setSearchOpen(false)
+                  navigate('/main', { state: { pendingToast: 'Открываем документ на странице 6' } })
+                }}
               />
             )}
           </SearchBox>
 
           <HeaderRight>
+            {/* Clock */}
+            <ClockWrap
+              onMouseEnter={() => setClockHover(true)}
+              onMouseLeave={() => setClockHover(false)}
+            >
+              <ClockInner>
+                <ClockTime>
+                  {String(now.getHours()).padStart(2,'0')}:{String(now.getMinutes()).padStart(2,'0')}
+                </ClockTime>
+                <ClockDate>
+                  {RU_DAY_ABR[now.getDay()]}, {now.getDate()} {RU_MON_GEN[now.getMonth()]}
+                </ClockDate>
+              </ClockInner>
+              {clockHover && (() => {
+                const y = now.getFullYear(), m = now.getMonth()
+                const cells = buildCalendarCells(y, m)
+                return (
+                  <CalPopover>
+                    <CalTitle>{RU_MONTHS[m]} {y}</CalTitle>
+                    <CalGrid>
+                      {RU_DAYS_HDR.map(d => <CalHeadCell key={d}>{d}</CalHeadCell>)}
+                      {cells.map((day, i) => (
+                        <CalDayCell key={i} $today={day === now.getDate()} $empty={day === null}>
+                          {day ?? ''}
+                        </CalDayCell>
+                      ))}
+                    </CalGrid>
+                  </CalPopover>
+                )
+              })()}
+            </ClockWrap>
+
+            {/* Network */}
+            <TooltipWrap
+              onMouseEnter={() => setNetHover(true)}
+              onMouseLeave={() => setNetHover(false)}
+            >
+              <HdrIconBtn as="div" style={{ cursor: 'default' }}>
+                <IconWifiDefault size="xs" color="#6b7280" />
+              </HdrIconBtn>
+              {netHover && <TooltipBox>Подключено к сети</TooltipBox>}
+            </TooltipWrap>
+
             {/* Mode switcher */}
             <ModeWrapper ref={modeRef}>
               <ModePill $open={modeOpen} $highlighted={zone === 'mode'} onClick={() => setModeOpen(v => !v)}>
@@ -824,13 +1053,26 @@ export function AppLayout() {
             </ModeWrapper>
 
             {/* Notifications */}
-            <NotifBtn title="Уведомления">
-              <IconBellOutline size="xs" color="currentColor" />
-              {unread > 0 && <NotifBadge>{unread}</NotifBadge>}
-            </NotifBtn>
+            <TooltipWrap
+              onMouseEnter={() => setNotifHover(true)}
+              onMouseLeave={() => setNotifHover(false)}
+            >
+              <HdrIconBtn as="div">
+                <IconBellOutline size="xs" color="#6b7280" />
+              </HdrIconBtn>
+              {notifHover && <TooltipBox>Центр уведомлений</TooltipBox>}
+            </TooltipWrap>
 
             {/* Avatar */}
-            <AvatarBtn title="Профиль пользователя">ОЗ</AvatarBtn>
+            <TooltipWrap
+              onMouseEnter={() => setAvatarHover(true)}
+              onMouseLeave={() => setAvatarHover(false)}
+            >
+              <AvatarBtn>
+                <IconProfileOutline size="xs" color="currentColor" />
+              </AvatarBtn>
+              {avatarHover && <TooltipBox>Профиль</TooltipBox>}
+            </TooltipWrap>
           </HeaderRight>
         </HeaderEl>
 
@@ -868,8 +1110,10 @@ export function AppLayout() {
                   >
                     <NavIcon $basic={mode === 'basic'}>
                       <item.Icon size={mode === 'basic' ? 's' : 'xs'} color="currentColor" />
+                      {collapsed && item.badge && <NavBadge $floating>{item.badge}</NavBadge>}
                     </NavIcon>
                     {!collapsed && <NavLabel>{item.label}</NavLabel>}
+                    {!collapsed && item.badge && <NavBadge>{item.badge}</NavBadge>}
                   </NavBtn>
                 )
               })}
@@ -920,7 +1164,7 @@ export function AppLayout() {
 
             <OpenObjectsBar />
 
-            <ContentScroll>
+            <ContentScroll $fading={fading}>
               <ContentInner>
                 <Outlet context={{ isEditMode, showToast }} />
               </ContentInner>
