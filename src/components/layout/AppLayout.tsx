@@ -23,6 +23,7 @@ import {
   IconPanelSidebarLFill,
   IconInfoCircleOutline,
   IconSearch,
+  IconCardsGridOutline,
 } from '@salutejs/plasma-icons'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -494,12 +495,13 @@ const NavLabel = styled.span`
 
 // ─── Content area ─────────────────────────────────────────────────────────────
 
-const ContentArea = styled.div<{ $highlighted?: boolean }>`
+const ContentArea = styled.div<{ $highlighted?: boolean; $editMode?: boolean }>`
   flex: 1;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: #f0f2f5;
+  background: ${({ $editMode }) => ($editMode ? '#c8cdd8' : '#f0f2f5')};
+  transition: background 0.2s;
   min-width: 0;
   position: relative;
   ${({ $highlighted }) => $highlighted && css`
@@ -512,6 +514,60 @@ const ContentArea = styled.div<{ $highlighted?: boolean }>`
       z-index: 10;
     }
   `}
+`
+
+const BcSpacer = styled.div`
+  flex: 1;
+`
+
+const EditBtnWrap = styled.div`
+  position: relative;
+  flex-shrink: 0;
+`
+
+const EditBtn = styled.button<{ $active: boolean }>`
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  height: 24px;
+  padding: 0 0.5rem;
+  border: 1px solid ${({ $active }) => ($active ? '#a5b4fc' : 'transparent')};
+  border-radius: 6px;
+  background: ${({ $active }) => ($active ? '#eef2ff' : 'transparent')};
+  color: ${({ $active }) => ($active ? '#4f46e5' : '#6b7280')};
+  font-size: 0.8125rem;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.1s, border-color 0.1s, color 0.1s;
+  &:hover { background: #eef2ff; border-color: #a5b4fc; color: #4f46e5; }
+`
+
+const EditMenu = styled.div`
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+  z-index: 300;
+  min-width: 180px;
+`
+
+const EditMenuItem = styled.button`
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.875rem;
+  background: transparent;
+  border: none;
+  text-align: left;
+  font-size: 0.875rem;
+  color: #374151;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.1s;
+  &:hover { background: #f8f9fa; color: #4f46e5; }
 `
 
 const BreadcrumbBar = styled.div`
@@ -591,6 +647,9 @@ export function AppLayout() {
   const searchBoxRef = useRef<HTMLDivElement>(null)
   const [toastMsg, setToastMsg] = useState('')
   const processedKey = useRef('')
+  const [isEditMode, setIsEditMode] = useState(false)
+  const [editMenuOpen, setEditMenuOpen] = useState(false)
+  const editMenuRef = useRef<HTMLDivElement>(null)
 
   // show pending toast passed via router state
   useEffect(() => {
@@ -637,9 +696,40 @@ export function AppLayout() {
     setSearchOpen(false)
   }, [location.pathname])
 
+  // close edit menu on outside click
+  useEffect(() => {
+    if (!editMenuOpen) return
+    function handler(e: MouseEvent) {
+      if (editMenuRef.current && !editMenuRef.current.contains(e.target as Node)) {
+        setEditMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [editMenuOpen])
+
+  // reset edit mode when leaving /main
+  useEffect(() => {
+    if (location.pathname !== '/main') {
+      setIsEditMode(false)
+      setEditMenuOpen(false)
+    }
+  }, [location.pathname])
+
   const sidebarWidth = collapsed ? SIDEBAR_MIN : mode === 'basic' ? SIDEBAR_BASIC : SIDEBAR_STD
   const unread = notifications.filter(n => !n.isRead).length
   const crumb = CRUMBS[location.pathname]
+
+  function showToast(msg: string) {
+    setToastMsg(msg)
+    setTimeout(() => setToastMsg(''), 3800)
+  }
+
+  function handleEditToggle() {
+    const next = !isEditMode
+    setIsEditMode(next)
+    setEditMenuOpen(next)
+  }
 
   function handleNavigateToResults() {
     const q = query.trim()
@@ -788,7 +878,7 @@ export function AppLayout() {
           </SidebarEl>
 
           {/* ─── Content ──────────────────────────────────────────────────── */}
-          <ContentArea $highlighted={zone === 'content'}>
+          <ContentArea $highlighted={zone === 'content'} $editMode={isEditMode}>
             {crumb && (
               <BreadcrumbBar>
                 <BCItem $clickable onClick={() => navigate('/main')}>CorpOS</BCItem>
@@ -802,6 +892,30 @@ export function AppLayout() {
                     <BCItem $active>{crumb.sub}</BCItem>
                   </>
                 )}
+                {location.pathname === '/main' && (
+                  <>
+                    <BcSpacer />
+                    <EditBtnWrap ref={editMenuRef}>
+                      <EditBtn
+                        $active={isEditMode}
+                        onClick={handleEditToggle}
+                        title={mode !== 'basic' ? 'Настроить рабочую среду' : undefined}
+                      >
+                        {mode === 'basic'    && <span>Настроить рабочую среду</span>}
+                        {mode === 'standard' && <span>Настроить</span>}
+                        <IconCardsGridOutline size="xs" color="currentColor" />
+                      </EditBtn>
+                      {editMenuOpen && (
+                        <EditMenu>
+                          <EditMenuItem>Добавить виджет</EditMenuItem>
+                          <EditMenuItem>Персонализация</EditMenuItem>
+                          <EditMenuItem>Сбросить расположение</EditMenuItem>
+                          <EditMenuItem>Настройки интерфейса</EditMenuItem>
+                        </EditMenu>
+                      )}
+                    </EditBtnWrap>
+                  </>
+                )}
               </BreadcrumbBar>
             )}
 
@@ -809,7 +923,7 @@ export function AppLayout() {
 
             <ContentScroll>
               <ContentInner>
-                <Outlet />
+                <Outlet context={{ isEditMode, showToast }} />
               </ContentInner>
             </ContentScroll>
           </ContentArea>
