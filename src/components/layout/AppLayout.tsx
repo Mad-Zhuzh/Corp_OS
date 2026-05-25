@@ -657,8 +657,7 @@ export function AppLayout() {
     if (state?.pendingToast && processedKey.current !== location.key) {
       processedKey.current = location.key
       setToastMsg(state.pendingToast)
-      const t = setTimeout(() => setToastMsg(''), 3800)
-      return () => clearTimeout(t)
+      setTimeout(() => setToastMsg(''), 3800)
     }
   }, [location.key])
 

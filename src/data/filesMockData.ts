@@ -24,9 +24,10 @@ export const mockFolders: MockFolder[] = [
   { id: 'projects',     label: 'Проекты',          description: 'Файлы по текущим проектам',         parentId: null },
   { id: 'instructions', label: 'Общие инструкции', description: 'Политики, регламенты и инструкции', parentId: null },
   // Мои документы
-  { id: 'my-drafts',     label: 'Черновики',   description: '', parentId: 'my' },
-  { id: 'my-reports',    label: 'Отчёты',      description: '', parentId: 'my' },
-  { id: 'my-statements', label: 'Заявления',   description: '', parentId: 'my' },
+  { id: 'my-drafts',     label: 'Черновики',         description: '', parentId: 'my' },
+  { id: 'my-reports',    label: 'Отчёты',             description: '', parentId: 'my' },
+  { id: 'my-statements', label: 'Заявления',          description: '', parentId: 'my' },
+  { id: 'roga',          label: 'ООО Рога и Копыта',  description: '', parentId: 'my' },
   // Отдел
   { id: 'dept-hr',      label: 'HR',      description: '', parentId: 'dept' },
   { id: 'dept-it',      label: 'IT',      description: '', parentId: 'dept' },
@@ -49,6 +50,9 @@ export const mockFiles: MockFile[] = [
   { id: 'f5', name: 'Отчёт за апрель 2026.xlsx',                    type: 'xlsx', folderId: 'my-reports',       date: '19.05.2026', owner: 'Зиновьева О.', size: '84 КБ'  },
   { id: 'f6', name: 'Протокол совещания 14.05.docx',                 type: 'docx', folderId: 'proj-alpha',       date: '14.05.2026', owner: 'Иванова С.',    size: '45 КБ'  },
   { id: 'f7', name: 'ТЗ проект Цифровой портал.pdf',                 type: 'pdf',  folderId: 'proj-beta',        date: '05.05.2026', owner: 'Козлов Д.',     size: '340 КБ' },
+  { id: 'f8', name: 'Коммерческое предложение.pdf',                  type: 'pdf',  folderId: 'roga',             date: '20.05.2026', owner: 'Зиновьева О.', size: '218 КБ' },
+  { id: 'f9', name: 'Реквизиты поставщика.xlsx',                     type: 'xlsx', folderId: 'roga',             date: '20.05.2026', owner: 'Зиновьева О.', size: '44 КБ'  },
+  { id: 'f10', name: 'Обоснование закупки.docx',                     type: 'docx', folderId: 'roga',             date: '19.05.2026', owner: 'Зиновьева О.', size: '31 КБ'  },
 ]
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

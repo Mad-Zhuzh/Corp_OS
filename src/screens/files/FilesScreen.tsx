@@ -12,6 +12,7 @@ import {
   getAllFilesInFolder,
   getFolderPathString,
   type MockFile,
+  type MockFolder,
 } from '../../data/filesMockData'
 
 // ─── Shared types ─────────────────────────────────────────────────────────────
@@ -158,105 +159,149 @@ const BASIC_CTX: CtxItem[] = [
 function BasicFiles() {
   const [showAllFolders, setShowAllFolders] = useState(false)
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  const [selectedFolder, setSelectedFolder] = useState<MockFolder | null>(null)
   const navigate = useNavigate()
   const rootFolders = getRootFolders()
   const recentFiles = [...mockFiles].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5)
 
+  const folderFiles = selectedFolder ? getAllFilesInFolder(selectedFolder.id) : recentFiles
+  const fileListTitle = selectedFolder ? selectedFolder.label : 'Последние файлы'
+
+  function handleFolderClick(f: MockFolder) {
+    setSelectedFolder(prev => prev?.id === f.id ? null : f)
+  }
+
   return (
     <BasicRoot>
 
-      {/* Hint — visible without scrolling */}
       <BasicHint>
         Если не знаете, где лежит файл — используйте поиск сверху
       </BasicHint>
 
-      {/* Folders */}
-      <div>
-        <BasicSectionRow>
-          <BasicSectionTitle>Папки</BasicSectionTitle>
-          <BasicAllFoldersLink onClick={() => setShowAllFolders(v => !v)}>
-            {showAllFolders ? 'Скрыть' : 'Все папки →'}
-          </BasicAllFoldersLink>
-        </BasicSectionRow>
+      <BasicBodyRow>
 
-        {showAllFolders ? (
-          <BasicFolderTree>
-            {rootFolders.map(root => (
-              <div key={root.id}>
-                <BasicFolderTreeRoot>
-                  <IconFolderOutline size="xs" color="#6366f1" />
-                  {root.label}
-                </BasicFolderTreeRoot>
-                {getChildren(root.id).map(sub => (
-                  <BasicFolderTreeSub key={sub.id}>
-                    <IconFolderOutline size="xs" color="#9ca3af" />
-                    {sub.label}
-                  </BasicFolderTreeSub>
-                ))}
-              </div>
-            ))}
-          </BasicFolderTree>
-        ) : (
-          <BasicFolderGrid>
-            {rootFolders.map(f => (
-              <BasicFolderCard key={f.id}>
-                <BasicFolderCardIcon>
-                  <IconFolderOutline size="m" color="#6366f1" />
-                </BasicFolderCardIcon>
-                <BasicFolderCardTitle>{f.label}</BasicFolderCardTitle>
-                <BasicFolderCardDesc>{f.description}</BasicFolderCardDesc>
-              </BasicFolderCard>
-            ))}
-          </BasicFolderGrid>
-        )}
-      </div>
+        {/* Folders panel */}
+        <BasicFoldersPanel>
+          <BasicSectionRow>
+            <BasicSectionTitle>Папки</BasicSectionTitle>
+            <BasicAllFoldersLink onClick={() => setShowAllFolders(v => !v)}>
+              {showAllFolders ? 'Скрыть' : 'Все →'}
+            </BasicAllFoldersLink>
+          </BasicSectionRow>
 
-      {/* Recent files */}
-      <div>
-        <BasicSectionTitle>Последние файлы</BasicSectionTitle>
-        <BasicFileList>
-          {recentFiles.map(file => (
-            <BasicFileRow key={file.id}>
-              <BasicFileDocIcon>
-                <IconDocumentOutline size="s" color="#9ca3af" />
-              </BasicFileDocIcon>
-              <BasicFileInfo>
-                <BasicFileName>{file.name}</BasicFileName>
-                <BasicFileMeta>{file.date} · {file.owner} · {file.size}</BasicFileMeta>
-              </BasicFileInfo>
-              <BasicFileActions>
-                <Button view="secondary" size="s" text="Открыть" onClick={() => navigate('/document')} />
-                <MoreWrap>
-                  <MoreBtn
-                    title="Ещё"
-                    onClick={() => setOpenMenuId(openMenuId === file.id ? null : file.id)}
+          {showAllFolders ? (
+            <BasicFolderTree>
+              {rootFolders.map(root => (
+                <div key={root.id}>
+                  <BasicFolderTreeRoot
+                    $active={selectedFolder?.id === root.id}
+                    onClick={() => handleFolderClick(root)}
                   >
-                    ⋯
-                  </MoreBtn>
-                  {openMenuId === file.id && (
-                    <CtxMenu items={BASIC_CTX} onClose={() => setOpenMenuId(null)} />
-                  )}
-                </MoreWrap>
-              </BasicFileActions>
-            </BasicFileRow>
-          ))}
-          {recentFiles.length === 0 && (
-            <BasicEmpty>
-              Файлы не найдены. Попробуйте выбрать другую папку или изменить запрос.
-            </BasicEmpty>
+                    <IconFolderOutline size="xs" color={selectedFolder?.id === root.id ? '#6366f1' : '#6366f1'} />
+                    {root.label}
+                  </BasicFolderTreeRoot>
+                  {getChildren(root.id).map(sub => (
+                    <BasicFolderTreeSub
+                      key={sub.id}
+                      $active={selectedFolder?.id === sub.id}
+                      onClick={() => handleFolderClick(sub)}
+                    >
+                      <IconFolderOutline size="xs" color={selectedFolder?.id === sub.id ? '#6366f1' : '#9ca3af'} />
+                      {sub.label}
+                    </BasicFolderTreeSub>
+                  ))}
+                </div>
+              ))}
+            </BasicFolderTree>
+          ) : (
+            <BasicFolderGrid>
+              {rootFolders.map(f => (
+                <BasicFolderCard
+                  key={f.id}
+                  $active={selectedFolder?.id === f.id}
+                  onClick={() => handleFolderClick(f)}
+                >
+                  <BasicFolderCardIcon>
+                    <IconFolderOutline size="m" color={selectedFolder?.id === f.id ? '#4338ca' : '#6366f1'} />
+                  </BasicFolderCardIcon>
+                  <BasicFolderCardTitle>{f.label}</BasicFolderCardTitle>
+                  <BasicFolderCardDesc>{f.description}</BasicFolderCardDesc>
+                </BasicFolderCard>
+              ))}
+            </BasicFolderGrid>
           )}
-        </BasicFileList>
-      </div>
+        </BasicFoldersPanel>
+
+        {/* Files panel */}
+        <BasicFilesPanel>
+          <BasicSectionRow>
+            <BasicSectionTitle>{fileListTitle}</BasicSectionTitle>
+            {selectedFolder && (
+              <BasicAllFoldersLink onClick={() => setSelectedFolder(null)}>
+                ← Все файлы
+              </BasicAllFoldersLink>
+            )}
+          </BasicSectionRow>
+          <BasicFileList>
+            {folderFiles.map(file => (
+              <BasicFileRow key={file.id}>
+                <BasicFileDocIcon>
+                  <IconDocumentOutline size="s" color="#9ca3af" />
+                </BasicFileDocIcon>
+                <BasicFileInfo>
+                  <BasicFileName>{file.name}</BasicFileName>
+                  <BasicFileMeta>{file.date} · {file.owner} · {file.size}</BasicFileMeta>
+                </BasicFileInfo>
+                <BasicFileActions>
+                  <Button view="secondary" size="s" text="Открыть" onClick={() => navigate('/document')} />
+                  <MoreWrap>
+                    <MoreBtn
+                      title="Ещё"
+                      onClick={() => setOpenMenuId(openMenuId === file.id ? null : file.id)}
+                    >
+                      ⋯
+                    </MoreBtn>
+                    {openMenuId === file.id && (
+                      <CtxMenu items={BASIC_CTX} onClose={() => setOpenMenuId(null)} />
+                    )}
+                  </MoreWrap>
+                </BasicFileActions>
+              </BasicFileRow>
+            ))}
+            {folderFiles.length === 0 && (
+              <BasicEmpty>
+                В этой папке нет файлов.
+              </BasicEmpty>
+            )}
+          </BasicFileList>
+        </BasicFilesPanel>
+
+      </BasicBodyRow>
 
     </BasicRoot>
   )
 }
 
 const BasicRoot = styled.div`
-  max-width: 680px;
   display: flex;
   flex-direction: column;
-  gap: 1.75rem;
+  gap: 1.25rem;
+`
+
+const BasicBodyRow = styled.div`
+  display: flex;
+  gap: 1.25rem;
+  align-items: flex-start;
+`
+
+const BasicFoldersPanel = styled.div`
+  width: 264px;
+  flex-shrink: 0;
+`
+
+const BasicFilesPanel = styled.div`
+  flex: 1;
+  min-width: 0;
 `
 
 const BasicHint = styled.div`
@@ -296,17 +341,17 @@ const BasicAllFoldersLink = styled.button`
 
 const BasicFolderGrid = styled.div`
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 0.75rem;
 `
 
-const BasicFolderCard = styled.div`
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
+const BasicFolderCard = styled.div<{ $active?: boolean }>`
+  background: ${({ $active }) => ($active ? '#eef2ff' : '#ffffff')};
+  border: 2px solid ${({ $active }) => ($active ? '#6366f1' : '#e5e7eb')};
   border-radius: 14px;
   padding: 1.25rem 1.5rem;
   cursor: pointer;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
   &:hover {
     border-color: #a5b4fc;
     box-shadow: 0 2px 8px rgba(99, 102, 241, 0.08);
@@ -340,23 +385,31 @@ const BasicFolderTree = styled.div`
   flex-direction: column;
 `
 
-const BasicFolderTreeRoot = styled.div`
+const BasicFolderTreeRoot = styled.div<{ $active?: boolean }>`
   display: flex;
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1.25rem;
   font-size: 0.9375rem;
   font-weight: 600;
-  color: #374151;
+  color: ${({ $active }) => ($active ? '#4338ca' : '#374151')};
+  background: ${({ $active }) => ($active ? '#eef2ff' : 'transparent')};
+  cursor: pointer;
+  transition: background 0.1s;
+  &:hover { background: #f5f3ff; }
 `
 
-const BasicFolderTreeSub = styled.div`
+const BasicFolderTreeSub = styled.div<{ $active?: boolean }>`
   display: flex;
   align-items: center;
   gap: 0.5rem;
   padding: 0.375rem 1.25rem 0.375rem 3.25rem;
   font-size: 0.875rem;
-  color: #6b7280;
+  color: ${({ $active }) => ($active ? '#4338ca' : '#6b7280')};
+  background: ${({ $active }) => ($active ? '#eef2ff' : 'transparent')};
+  cursor: pointer;
+  transition: background 0.1s;
+  &:hover { background: #f5f3ff; }
 `
 
 const BasicFileList = styled.div`
@@ -768,6 +821,37 @@ function ExpertFiles() {
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all')
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  const [checkedFiles, setCheckedFiles] = useState<Set<string>>(new Set())
+
+  function toggleCheck(id: string) {
+    setCheckedFiles(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  function toggleCheckAll() {
+    const allChecked = filtered.every(f => checkedFiles.has(f.id))
+    if (allChecked) {
+      setCheckedFiles(prev => {
+        const next = new Set(prev)
+        filtered.forEach(f => next.delete(f.id))
+        return next
+      })
+    } else {
+      setCheckedFiles(prev => {
+        const next = new Set(prev)
+        filtered.forEach(f => next.add(f.id))
+        return next
+      })
+    }
+  }
+
+  function handleAddToRequest() {
+    const ids = Array.from(checkedFiles).join(',')
+    navigate(`/task?source=folder&folder=roga&files=${ids}`)
+  }
 
   function toggleExpanded(id: string) {
     setExpanded(prev => {
@@ -861,8 +945,20 @@ function ExpertFiles() {
           <ExpFileCount>{filtered.length} файлов</ExpFileCount>
         </ExpTopBar>
 
+        {checkedFiles.size > 0 && (
+          <ExpSelectionBar>
+            <span>Выбрано файлов: {checkedFiles.size}</span>
+            <ExpAddLink onClick={handleAddToRequest}>Добавить в заявку →</ExpAddLink>
+          </ExpSelectionBar>
+        )}
+
         <ExpTable>
           <ExpTableHead>
+            <ExpCheckCell onClick={toggleCheckAll}>
+              <ExpCheckBox $checked={filtered.length > 0 && filtered.every(f => checkedFiles.has(f.id))}>
+                {filtered.length > 0 && filtered.every(f => checkedFiles.has(f.id)) && '✓'}
+              </ExpCheckBox>
+            </ExpCheckCell>
             <ExpHCell>Название</ExpHCell>
             <ExpHCell>Путь</ExpHCell>
             <ExpHCell>Тип</ExpHCell>
@@ -874,6 +970,11 @@ function ExpertFiles() {
             <ExpEmpty>No files</ExpEmpty>
           ) : filtered.map(file => (
             <ExpRow key={file.id} onDoubleClick={() => navigate('/document')} title="Двойной клик — открыть файл">
+              <ExpCheckCell onClick={e => { e.stopPropagation(); toggleCheck(file.id) }}>
+                <ExpCheckBox $checked={checkedFiles.has(file.id)}>
+                  {checkedFiles.has(file.id) && '✓'}
+                </ExpCheckBox>
+              </ExpCheckCell>
               <ExpFileNameCell>
                 <IconDocumentOutline size="xs" color="#9ca3af" />
                 <span title={file.name}>{file.name}</span>
@@ -1091,7 +1192,7 @@ const ExpTable = styled.div`
 
 const ExpTableHead = styled.div`
   display: grid;
-  grid-template-columns: 1fr 150px 62px 120px 100px 40px;
+  grid-template-columns: 32px 1fr 150px 62px 120px 100px 40px;
   padding: 0.375rem 0.875rem;
   border-bottom: 1px solid #e5e7eb;
   background: #f9fafb;
@@ -1108,7 +1209,7 @@ const ExpHCell = styled.span`
 
 const ExpRow = styled.div`
   display: grid;
-  grid-template-columns: 1fr 150px 62px 120px 100px 40px;
+  grid-template-columns: 32px 1fr 150px 62px 120px 100px 40px;
   padding: 0.375rem 0.875rem;
   align-items: center;
   border-bottom: 1px solid #f3f4f6;
@@ -1154,6 +1255,55 @@ const ExpEmpty = styled.div`
   font-size: 0.8125rem;
   color: #9ca3af;
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
+`
+
+const ExpSelectionBar = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.375rem 0.875rem;
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  color: #4338ca;
+  font-weight: 500;
+`
+
+const ExpAddLink = styled.button`
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-size: 0.8125rem;
+  color: #4338ca;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  &:hover { color: #312e81; }
+`
+
+const ExpCheckCell = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+`
+
+const ExpCheckBox = styled.div<{ $checked: boolean }>`
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  border: 2px solid ${({ $checked }) => ($checked ? '#6366f1' : '#d1d5db')};
+  background: ${({ $checked }) => ($checked ? '#6366f1' : 'transparent')};
+  color: white;
+  font-size: 0.625rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.1s, background 0.1s;
+  flex-shrink: 0;
 `
 
 // ─── Root ─────────────────────────────────────────────────────────────────────
