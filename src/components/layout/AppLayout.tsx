@@ -6,7 +6,6 @@ import { OpenObjectsBar } from '../shared/OpenObjectsBar'
 import styled, { createGlobalStyle, css } from 'styled-components'
 import { useUserMode, type UserMode } from '../../context/UserModeContext'
 import { useTourHighlight } from '../../context/TourHighlightContext'
-import { notifications } from '../../data/mockData'
 import type { FC } from 'react'
 import type { IconProps } from '@salutejs/plasma-icons'
 import {
@@ -336,40 +335,7 @@ const ModeMenuLink = styled.button`
   &:hover { background: #f8f9fa; color: #4f46e5; }
 `
 
-// ─── Notification button ──────────────────────────────────────────────────────
-
-const NotifBtn = styled.button`
-  position: relative;
-  width: 34px;
-  height: 34px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  background: #ffffff;
-  cursor: pointer;
-  transition: background 0.1s;
-  &:hover { background: #f0f2f5; }
-`
-
-const NotifBadge = styled.span`
-  position: absolute;
-  top: -4px;
-  right: -4px;
-  min-width: 16px;
-  height: 16px;
-  padding: 0 3px;
-  background: #4f46e5;
-  color: #fff;
-  font-size: 0.625rem;
-  font-weight: 700;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-`
+// ─── Avatar ───────────────────────────────────────────────────────────────────
 
 // ─── Avatar ───────────────────────────────────────────────────────────────────
 
@@ -898,7 +864,6 @@ export function AppLayout() {
   }, [location.pathname])
 
   const sidebarWidth = collapsed ? SIDEBAR_MIN : mode === 'basic' ? SIDEBAR_BASIC : SIDEBAR_STD
-  const unread = notifications.filter(n => !n.isRead).length
   const crumb = CRUMBS[location.pathname]
 
   function showToast(msg: string) {
