@@ -473,26 +473,22 @@ const CalDayCell = styled.div<{ $today?: boolean; $empty?: boolean }>`
 
 // ─── Sidebar nav badge ────────────────────────────────────────────────────────
 
-const NavBadge = styled.span<{ $floating?: boolean }>`
-  min-width: 16px;
-  height: 16px;
+const NavBadge = styled.span`
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  min-width: 14px;
+  height: 14px;
   padding: 0 3px;
   background: #4f46e5;
   color: #fff;
   font-size: 0.5625rem;
   font-weight: 700;
-  border-radius: 8px;
+  line-height: 1;
+  border-radius: 7px;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
-  ${({ $floating }) => $floating && css`
-    position: absolute;
-    top: -3px;
-    right: -3px;
-    min-width: 14px;
-    height: 14px;
-  `}
 `
 
 // ─── Body ─────────────────────────────────────────────────────────────────────
@@ -1075,10 +1071,9 @@ export function AppLayout() {
                   >
                     <NavIcon $basic={mode === 'basic'}>
                       <item.Icon size={mode === 'basic' ? 's' : 'xs'} color="currentColor" />
-                      {collapsed && item.badge && <NavBadge $floating>{item.badge}</NavBadge>}
+                      {item.badge && <NavBadge>{item.badge}</NavBadge>}
                     </NavIcon>
                     {!collapsed && <NavLabel>{item.label}</NavLabel>}
-                    {!collapsed && item.badge && <NavBadge>{item.badge}</NavBadge>}
                   </NavBtn>
                 )
               })}

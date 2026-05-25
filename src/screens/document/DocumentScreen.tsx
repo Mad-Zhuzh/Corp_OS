@@ -1,17 +1,22 @@
 import { useEffect, useState } from 'react'
 import styled from 'styled-components'
 import { Button } from '@salutejs/plasma-web'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useOpenObjects } from '../../context/OpenObjectsContext'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 export const DOCUMENT_OBJECT_ID = '/document'
 
-const DOC_TITLE    = 'Шаблон заявления на отпуск'
-const DOC_DATE     = '12.05.2026'
-const DOC_DEPT     = 'Отдел кадров'
-const DOC_LABEL    = 'Шаблон заявления' // 17 chars, fits in 24
+const VACATION_TITLE = 'Шаблон заявления на отпуск'
+const VACATION_DATE  = '12.05.2026'
+const VACATION_DEPT  = 'Отдел кадров'
+const VACATION_LABEL = 'Шаблон заявления'
+
+const COMP_TITLE  = 'Положение о компенсациях сотрудникам'
+const COMP_DATE   = '01.03.2026'
+const COMP_DEPT   = 'Отдел кадров'
+const COMP_LABEL  = 'Положение о компенсациях'
 
 // ─── Styled components ────────────────────────────────────────────────────────
 
@@ -33,6 +38,19 @@ const DocMeta = styled.div`
   margin-bottom: 1.5rem;
 `
 
+const PageBadge = styled.span`
+  display: inline-block;
+  background: #eef2ff;
+  color: #4338ca;
+  border: 1px solid #c7d2fe;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.125rem 0.5rem;
+  margin-left: 0.625rem;
+  vertical-align: middle;
+`
+
 const DocCard = styled.div`
   background: #ffffff;
   border: 1px solid #e5e7eb;
@@ -50,10 +68,28 @@ const DocSubtitle = styled.div`
   margin-bottom: 1.5rem;
 `
 
+const DocSection = styled.div`
+  margin-bottom: 1.25rem;
+`
+
+const DocSectionTitle = styled.div`
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 0.5rem;
+`
+
 const DocText = styled.div`
   font-size: 0.9375rem;
   color: #374151;
   line-height: 1.8;
+`
+
+const Highlight = styled.mark`
+  background: #fef08a;
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 1px;
 `
 
 const ActRow = styled.div`
@@ -80,22 +116,91 @@ const LocalToast = styled.div<{ $visible: boolean }>`
   transition: opacity 0.25s ease;
 `
 
+// ─── Highlight helper ─────────────────────────────────────────────────────────
+
+function HighlightedText({ text, term }: { text: string; term: string }) {
+  if (!term) return <>{text}</>
+  const regex = new RegExp(`(${term}\\w*)`, 'gi')
+  const parts = text.split(regex)
+  return (
+    <>
+      {parts.map((part, i) =>
+        regex.test(part) ? <Highlight key={i}>{part}</Highlight> : part
+      )}
+    </>
+  )
+}
+
+// ─── Compensation document content ───────────────────────────────────────────
+
+function CompensationDoc({ page, highlight }: { page: number; highlight: string }) {
+  return (
+    <>
+      <DocSubtitle>
+        Положение о компенсациях сотрудникам
+        {page > 1 && <PageBadge>Страница {page}</PageBadge>}
+      </DocSubtitle>
+
+      <DocSection>
+        <DocSectionTitle>§ 1. Общие положения</DocSectionTitle>
+        <DocText>
+          <HighlightedText
+            text="Настоящее положение устанавливает порядок и условия компенсации расходов сотрудников компании, понесённых в ходе исполнения трудовых обязанностей."
+            term={highlight}
+          />
+        </DocText>
+      </DocSection>
+
+      <DocSection>
+        <DocSectionTitle>§ 4. Компенсация транспортных расходов</DocSectionTitle>
+        <DocText>
+          <HighlightedText
+            text="Порядок компенсации проезда сотрудником до места работы определяется внутренним регламентом компании и подлежит возмещению в установленном размере. Компенсация выплачивается ежемесячно на основании предоставленных документов, подтверждающих транспортные расходы."
+            term={highlight}
+          />
+        </DocText>
+      </DocSection>
+
+      <DocSection>
+        <DocSectionTitle>§ 5. Размер компенсации</DocSectionTitle>
+        <DocText>
+          <HighlightedText
+            text="Предельный размер компенсации транспортных расходов устанавливается приказом генерального директора и пересматривается не реже одного раза в год. Конкретный размер компенсации определяется исходя из фактически понесённых расходов, но не более установленного лимита."
+            term={highlight}
+          />
+        </DocText>
+      </DocSection>
+    </>
+  )
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function DocumentScreen() {
   const { openObject, closeObject, objects } = useOpenObjects()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [toastMsg, setToastMsg] = useState('')
+
+  const pageParam      = searchParams.get('page')
+  const highlightParam = searchParams.get('highlight') ?? ''
+  const isCompDoc      = pageParam !== null
+
+  const title  = isCompDoc ? COMP_TITLE  : VACATION_TITLE
+  const date   = isCompDoc ? COMP_DATE   : VACATION_DATE
+  const dept   = isCompDoc ? COMP_DEPT   : VACATION_DEPT
+  const label  = isCompDoc ? COMP_LABEL  : VACATION_LABEL
+  const pageNo = pageParam ? parseInt(pageParam, 10) : 1
 
   useEffect(() => {
     openObject({
       id:        DOCUMENT_OBJECT_ID,
       type:      'document',
-      label:     DOC_LABEL,
-      fullLabel: DOC_TITLE,
+      label,
+      fullLabel: title,
       route:     DOCUMENT_OBJECT_ID,
     })
-  }, [openObject])
+  }, [openObject, label, title])
 
   function showToast(msg: string) {
     setToastMsg(msg)
@@ -104,15 +209,24 @@ export function DocumentScreen() {
 
   return (
     <Wrapper>
-      <DocTitle>{DOC_TITLE}</DocTitle>
-      <DocMeta>Документ · Обновлён {DOC_DATE} · {DOC_DEPT}</DocMeta>
+      <DocTitle>
+        {title}
+        {isCompDoc && <PageBadge>Стр. {pageNo}</PageBadge>}
+      </DocTitle>
+      <DocMeta>Документ · Обновлён {date} · {dept}</DocMeta>
 
       <DocCard>
-        <DocSubtitle>Заявление на ежегодный оплачиваемый отпуск</DocSubtitle>
-        <DocText>
-          Прошу предоставить мне ежегодный оплачиваемый отпуск
-          с ______ по ______ продолжительностью ___ календарных дней.
-        </DocText>
+        {isCompDoc ? (
+          <CompensationDoc page={pageNo} highlight={highlightParam} />
+        ) : (
+          <>
+            <DocSubtitle>Заявление на ежегодный оплачиваемый отпуск</DocSubtitle>
+            <DocText>
+              Прошу предоставить мне ежегодный оплачиваемый отпуск
+              с ______ по ______ продолжительностью ___ календарных дней.
+            </DocText>
+          </>
+        )}
       </DocCard>
 
       <ActRow>
@@ -122,12 +236,14 @@ export function DocumentScreen() {
           text="Скачать"
           onClick={() => showToast('Документ скачан')}
         />
-        <Button
-          view="secondary"
-          size="m"
-          text="Использовать шаблон"
-          onClick={() => showToast('Шаблон добавлен')}
-        />
+        {!isCompDoc && (
+          <Button
+            view="secondary"
+            size="m"
+            text="Использовать шаблон"
+            onClick={() => showToast('Шаблон добавлен')}
+          />
+        )}
         <Button
           view="secondary"
           size="m"

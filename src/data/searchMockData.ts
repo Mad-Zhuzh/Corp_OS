@@ -1,3 +1,5 @@
+import { mockFiles, type MockFile } from './filesMockData'
+
 // ─── Single source document ───────────────────────────────────────────────────
 
 export const SEARCH_DOC = {
@@ -45,6 +47,25 @@ export const DD_RECENT: Record<'basic' | 'standard' | 'expert', string[]> = {
 }
 
 export const DD_EXAMPLES_BASIC = ['заявление на отпуск', 'доступ к системе', 'мои задачи']
+
+// ─── Two-layer file search ────────────────────────────────────────────────────
+
+export function parseQuery(query: string): { typeFilter: string | null; term: string } {
+  const m = /^тип:(\S+)\s*(.*)/i.exec(query.trim())
+  if (m) return { typeFilter: m[1].toLowerCase(), term: m[2].trim() }
+  return { typeFilter: null, term: query.trim() }
+}
+
+export function getFileResults(query: string): MockFile[] {
+  const { typeFilter, term } = parseQuery(query)
+  if (!typeFilter && term.length < 2) return []
+  let results = mockFiles
+  if (typeFilter) results = results.filter(f => f.type === typeFilter)
+  if (term.length >= 2) results = results.filter(f => f.name.toLowerCase().includes(term.toLowerCase()))
+  return results
+}
+
+export type { MockFile }
 
 export const DD_ACTIONS: Record<'standard' | 'expert', { label: string; nav: string }[]> = {
   standard: [

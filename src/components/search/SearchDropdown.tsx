@@ -9,8 +9,16 @@ import {
   isSearchMatch,
   isExpertMatch,
   isOperatorPrefix,
+  getFileResults,
+  type MockFile,
 } from '../../data/searchMockData'
 import type { SearchResult } from '../../data/mockData'
+
+const TYPE_STYLE: Record<string, { bg: string; color: string }> = {
+  pdf:  { bg: '#fee2e2', color: '#b91c1c' },
+  docx: { bg: '#dbeafe', color: '#1d4ed8' },
+  xlsx: { bg: '#dcfce7', color: '#15803d' },
+}
 
 // ─── Styled components ────────────────────────────────────────────────────────
 
@@ -277,6 +285,30 @@ const DDEnterBadge = styled.span`
   flex-shrink: 0;
 `
 
+// ─── File result row (shared) ─────────────────────────────────────────────────
+
+function FileRow({ file, onSelect }: { file: MockFile; onSelect: () => void }) {
+  const s = TYPE_STYLE[file.type] ?? TYPE_STYLE.pdf
+  return (
+    <DDRowBtn onClick={onSelect}>
+      <DDRowIcon style={{ background: s.bg, color: s.color }}>{file.type.toUpperCase()}</DDRowIcon>
+      <DDRowTitle>{file.name}</DDRowTitle>
+      <DDRowMeta>{file.date}</DDRowMeta>
+    </DDRowBtn>
+  )
+}
+
+function ExpertFileRow({ file, onSelect }: { file: MockFile; onSelect: () => void }) {
+  const s = TYPE_STYLE[file.type] ?? TYPE_STYLE.pdf
+  return (
+    <DDExpertRow onClick={onSelect}>
+      <DDRowIcon style={{ background: s.bg, color: s.color }}>{file.type.toUpperCase()}</DDRowIcon>
+      <DDExpertTitle>{file.name}</DDExpertTitle>
+      <DDExpertMeta>{file.date}</DDExpertMeta>
+    </DDExpertRow>
+  )
+}
+
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 interface SearchDropdownProps {
@@ -303,7 +335,9 @@ export function SearchDropdown({
 
   // ── BASIC ──────────────────────────────────────────────────────────────────
   if (mode === 'basic') {
-    const matched = hasQuery && isSearchMatch(query)
+    const matched   = hasQuery && isSearchMatch(query)
+    const fileRes   = hasQuery ? getFileResults(query) : []
+    const anyResult = matched || fileRes.length > 0
     return (
       <DropdownBox>
         {!hasQuery && (
@@ -338,7 +372,17 @@ export function SearchDropdown({
           </>
         )}
 
-        {hasQuery && !matched && (
+        {hasQuery && fileRes.length > 0 && (
+          <DDSection>
+            {matched && <DDDivider />}
+            <DDLabel>Файлы</DDLabel>
+            {fileRes.map(f => (
+              <FileRow key={f.id} file={f} onSelect={onAllResults} />
+            ))}
+          </DDSection>
+        )}
+
+        {hasQuery && !anyResult && (
           <DDEmpty>Ничего не найдено. Попробуйте написать иначе.</DDEmpty>
         )}
 
@@ -353,8 +397,10 @@ export function SearchDropdown({
 
   // ── STANDARD ───────────────────────────────────────────────────────────────
   if (mode === 'standard') {
-    const matched = hasQuery && isSearchMatch(query)
-    const actions = DD_ACTIONS.standard
+    const matched   = hasQuery && isSearchMatch(query)
+    const fileRes   = hasQuery ? getFileResults(query) : []
+    const anyResult = matched || fileRes.length > 0
+    const actions   = DD_ACTIONS.standard
     return (
       <DropdownBox>
         {!hasQuery && (
@@ -383,7 +429,11 @@ export function SearchDropdown({
           </DDRowBtn>
         )}
 
-        {hasQuery && !matched && (
+        {hasQuery && fileRes.length > 0 && fileRes.map(f => (
+          <FileRow key={f.id} file={f} onSelect={onAllResults} />
+        ))}
+
+        {hasQuery && !anyResult && (
           <DDEmpty>Ничего не найдено</DDEmpty>
         )}
 
@@ -399,6 +449,8 @@ export function SearchDropdown({
   // ── EXPERT ─────────────────────────────────────────────────────────────────
   const isOpPrefix = hasQuery && isOperatorPrefix(query)
   const matched    = hasQuery && isExpertMatch(query)
+  const fileRes    = hasQuery && !isOpPrefix ? getFileResults(query) : []
+  const anyResult  = matched || fileRes.length > 0
   const actions    = DD_ACTIONS.expert
 
   return (
@@ -422,17 +474,15 @@ export function SearchDropdown({
       )}
 
       {isOpPrefix && (
-        <>
-          <DDSection>
-            <DDLabel>Доступные операторы:</DDLabel>
-            {EXPERT_OPERATORS.map(o => (
-              <DDOpRow key={o.op} onClick={() => onQueryChange(o.op + ' ')}>
-                <DDOpCode>{o.op}</DDOpCode>
-                <DDOpDesc>{o.desc}</DDOpDesc>
-              </DDOpRow>
-            ))}
-          </DDSection>
-        </>
+        <DDSection>
+          <DDLabel>Доступные операторы:</DDLabel>
+          {EXPERT_OPERATORS.map(o => (
+            <DDOpRow key={o.op} onClick={() => onQueryChange(o.op + ' ')}>
+              <DDOpCode>{o.op}</DDOpCode>
+              <DDOpDesc>{o.desc}</DDOpDesc>
+            </DDOpRow>
+          ))}
+        </DDSection>
       )}
 
       {hasQuery && !isOpPrefix && matched && (
@@ -444,7 +494,11 @@ export function SearchDropdown({
         </DDExpertRow>
       )}
 
-      {hasQuery && !isOpPrefix && !matched && (
+      {hasQuery && !isOpPrefix && fileRes.map(f => (
+        <ExpertFileRow key={f.id} file={f} onSelect={onAllResults} />
+      ))}
+
+      {hasQuery && !isOpPrefix && !anyResult && (
         <DDEmpty>Не найдено</DDEmpty>
       )}
 

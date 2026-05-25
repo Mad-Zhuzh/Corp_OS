@@ -9,7 +9,15 @@ import {
   BASIC_EMPTY_SUGGESTIONS,
   isSearchMatch,
   isExpertMatch,
+  getFileResults,
+  type MockFile,
 } from '../../data/searchMockData'
+
+const TYPE_STYLE: Record<string, { bg: string; color: string }> = {
+  pdf:  { bg: '#fee2e2', color: '#b91c1c' },
+  docx: { bg: '#dbeafe', color: '#1d4ed8' },
+  xlsx: { bg: '#dcfce7', color: '#15803d' },
+}
 
 // ─── Shared tokens ────────────────────────────────────────────────────────────
 
@@ -114,6 +122,82 @@ const PdfIconSm = styled.div`
   color: #b91c1c;
   flex-shrink: 0;
 `
+
+// ─── File result rows ─────────────────────────────────────────────────────────
+
+const FileResultRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.75rem 1rem;
+  background: ${c.cardBg};
+  border: 1px solid ${c.border};
+  border-radius: 10px;
+  cursor: pointer;
+  transition: box-shadow 0.12s;
+  &:hover { box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07); }
+`
+
+const FileIconBadge = styled.div<{ $bg: string; $color: string }>`
+  width: 32px;
+  height: 32px;
+  background: ${({ $bg }) => $bg};
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.625rem;
+  font-weight: 700;
+  color: ${({ $color }) => $color};
+  flex-shrink: 0;
+`
+
+const FileResultName = styled.div`
+  flex: 1;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: ${c.text};
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+`
+
+const FileResultMeta = styled.div`
+  font-size: 0.8125rem;
+  color: ${c.textSec};
+  white-space: nowrap;
+`
+
+const FileResultsSection = styled.div`
+  margin-top: 1.25rem;
+`
+
+const SectionLabel = styled.div`
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: ${c.textTer};
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.5rem;
+`
+
+const FileResultsList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+`
+
+function FileRow({ file, onClick }: { file: MockFile; onClick: () => void }) {
+  const s = TYPE_STYLE[file.type] ?? TYPE_STYLE.pdf
+  return (
+    <FileResultRow onClick={onClick}>
+      <FileIconBadge $bg={s.bg} $color={s.color}>{file.type.toUpperCase()}</FileIconBadge>
+      <FileResultName>{file.name}</FileResultName>
+      <FileResultMeta>{file.date}</FileResultMeta>
+    </FileResultRow>
+  )
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // BASIC
@@ -307,7 +391,7 @@ export function SearchScreen() {
   }, [query, openObject])
 
   function handleDocOpen() {
-    navigate('/main', { state: { pendingToast: `Открываем документ на странице ${SEARCH_DOC.page}` } })
+    navigate(`/document?page=${SEARCH_DOC.page}&highlight=компенсация`)
   }
 
   // ── No query ────────────────────────────────────────────────────────────────
@@ -324,13 +408,15 @@ export function SearchScreen() {
 
   // ── BASIC ────────────────────────────────────────────────────────────────────
   if (mode === 'basic') {
-    const matched = isSearchMatch(query)
+    const matched  = isSearchMatch(query)
+    const fileRes  = getFileResults(query)
+    const anyResult = matched || fileRes.length > 0
     return (
       <BasicWrapper>
         <PageTitle>Результаты поиска</PageTitle>
         {matched && <PageSubtitle>Похоже, это то что вам нужно</PageSubtitle>}
 
-        {matched ? (
+        {matched && (
           <>
             <BasicResultCard>
               <PdfIconLg>PDF</PdfIconLg>
@@ -343,7 +429,20 @@ export function SearchScreen() {
             </BasicResultCard>
             <BasicNote>Мы нашли этот документ по смыслу вашего запроса</BasicNote>
           </>
-        ) : (
+        )}
+
+        {fileRes.length > 0 && (
+          <FileResultsSection>
+            {matched && <SectionLabel>Файлы</SectionLabel>}
+            <FileResultsList>
+              {fileRes.map(f => (
+                <FileRow key={f.id} file={f} onClick={() => navigate(`/document?page=1`)} />
+              ))}
+            </FileResultsList>
+          </FileResultsSection>
+        )}
+
+        {!anyResult && (
           <div>
             <div style={{ fontSize: '0.9375rem', fontWeight: 600, color: '#374151', marginBottom: '0.375rem' }}>
               Ничего не нашлось. Попробуйте написать иначе:
@@ -361,8 +460,10 @@ export function SearchScreen() {
 
   // ── STANDARD ─────────────────────────────────────────────────────────────────
   if (mode === 'standard') {
-    const matched = isSearchMatch(query)
-    const FILTERS = [
+    const matched  = isSearchMatch(query)
+    const fileRes  = getFileResults(query)
+    const total    = (matched ? 1 : 0) + fileRes.length
+    const FILTERS  = [
       { key: 'all', label: 'Все' },
       { key: 'documents', label: 'Документы' },
       { key: 'services', label: 'Сервисы' },
@@ -372,8 +473,8 @@ export function SearchScreen() {
       <StandardWrapper>
         <PageTitle>Глобальный поиск</PageTitle>
         <PageSubtitle>
-          {matched
-            ? `Найдено 1 результат по запросу «${query}»`
+          {total > 0
+            ? `Найдено ${total} ${total === 1 ? 'результат' : 'результата'} по запросу «${query}»`
             : `По запросу «${query}» ничего не найдено`}
         </PageSubtitle>
 
@@ -385,8 +486,8 @@ export function SearchScreen() {
           ))}
         </FiltersRow>
 
-        {matched ? (
-          <StandardResultRow>
+        {matched && (
+          <StandardResultRow style={{ marginBottom: '0.5rem' }}>
             <PdfIconSm>PDF</PdfIconSm>
             <StandardResultBody>
               <StandardResultTitle>{SEARCH_DOC.shortName}</StandardResultTitle>
@@ -397,7 +498,17 @@ export function SearchScreen() {
               <Button view="secondary" size="s" text="Открыть" onClick={handleDocOpen} />
             </StandardResultActions>
           </StandardResultRow>
-        ) : (
+        )}
+
+        {fileRes.length > 0 && (
+          <FileResultsList style={{ marginTop: matched ? '0.5rem' : 0 }}>
+            {fileRes.map(f => (
+              <FileRow key={f.id} file={f} onClick={() => navigate('/document?page=1')} />
+            ))}
+          </FileResultsList>
+        )}
+
+        {total === 0 && (
           <div style={{ fontSize: '0.9375rem', color: c.textSec }}>
             По запросу ничего не найдено
           </div>
@@ -407,41 +518,57 @@ export function SearchScreen() {
   }
 
   // ── EXPERT ────────────────────────────────────────────────────────────────────
-  const matched = isExpertMatch(query)
-  const isPdfOp = query.toLowerCase().startsWith('тип:pdf')
-  const hasOp = isPdfOp
+  const matched   = isExpertMatch(query)
+  const fileRes   = getFileResults(query)
+  const total     = (matched ? 1 : 0) + fileRes.length
+  const { typeFilter, term } = (() => {
+    const m = /^тип:(\S+)\s*(.*)/i.exec(query.trim())
+    if (m) return { typeFilter: m[1].toLowerCase(), term: m[2].trim() }
+    return { typeFilter: null as null, term: query.trim() }
+  })()
 
   return (
     <ExpertWrapper>
       <PageTitle>Поиск и действия</PageTitle>
 
+      <ExpertMeta>
+        {typeFilter
+          ? `тип:${typeFilter}${term ? ` · ${term}` : ''} · найдено ${total}`
+          : `«${query}» · найдено ${total}`}
+      </ExpertMeta>
+
       {matched && (
-        <ExpertMeta>
-          {hasOp ? `${query.toLowerCase().split(' ')[0]} · ${query.toLowerCase().split(' ').slice(1).join(' ')} · найдено 1` : `«${query}» · найдено 1`}
-        </ExpertMeta>
-      )}
-      {!matched && (
-        <PageSubtitle style={{ marginBottom: '1rem' }}>«{query}»</PageSubtitle>
+        <ExpertResultRow>
+          <ExpertResultTop>
+            <PdfIconSm>PDF</PdfIconSm>
+            <ExpertResultTitle>{SEARCH_DOC.name}</ExpertResultTitle>
+            <ExpertResultFileMeta>PDF · страница {SEARCH_DOC.page}</ExpertResultFileMeta>
+            <Button view="clear" size="xs" text={`Открыть на стр.${SEARCH_DOC.page}`} onClick={handleDocOpen} />
+          </ExpertResultTop>
+          <ExpertResultFragment>{SEARCH_DOC.fragment}</ExpertResultFragment>
+        </ExpertResultRow>
       )}
 
-      {matched ? (
-        <>
-          <ExpertResultRow>
+      {fileRes.map(f => {
+        const s = TYPE_STYLE[f.type] ?? TYPE_STYLE.pdf
+        return (
+          <ExpertResultRow key={f.id} onClick={() => navigate('/document?page=1')} style={{ cursor: 'pointer' }}>
             <ExpertResultTop>
-              <PdfIconSm>PDF</PdfIconSm>
-              <ExpertResultTitle>{SEARCH_DOC.name}</ExpertResultTitle>
-              <ExpertResultFileMeta>PDF · страница {SEARCH_DOC.page}</ExpertResultFileMeta>
-              <Button view="clear" size="xs" text={`Открыть на стр.${SEARCH_DOC.page}`} onClick={handleDocOpen} />
+              <PdfIconSm style={{ background: s.bg, color: s.color, fontSize: '0.5625rem' }}>{f.type.toUpperCase()}</PdfIconSm>
+              <ExpertResultTitle>{f.name}</ExpertResultTitle>
+              <ExpertResultFileMeta>{f.type.toUpperCase()} · {f.date}</ExpertResultFileMeta>
             </ExpertResultTop>
-            <ExpertResultFragment>{SEARCH_DOC.fragment}</ExpertResultFragment>
           </ExpertResultRow>
-          <ExpertHint>↑↓ выбор · Enter открыть · Esc закрыть</ExpertHint>
-        </>
-      ) : (
+        )
+      })}
+
+      {total === 0 && (
         <div style={{ fontSize: '0.8125rem', color: c.textTer, fontFamily: 'SF Mono, Consolas, monospace' }}>
           Не найдено. Попробуйте тип:pdf [запрос]
         </div>
       )}
+
+      {total > 0 && <ExpertHint>↑↓ выбор · Enter открыть · Esc закрыть</ExpertHint>}
     </ExpertWrapper>
   )
 }
