@@ -46,7 +46,7 @@ export const DD_RECENT: Record<'basic' | 'standard' | 'expert', string[]> = {
   expert:   ['политика ИБ', 'доступ'],
 }
 
-export const DD_EXAMPLES_BASIC = ['заявление на отпуск', 'доступ к системе', 'мои задачи']
+export const DD_EXAMPLES_BASIC = ['заявка на закупку', 'доступ к системе', 'мои задачи']
 
 // ─── Two-layer file search ────────────────────────────────────────────────────
 
