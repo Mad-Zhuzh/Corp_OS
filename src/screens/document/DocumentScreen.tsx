@@ -198,7 +198,9 @@ export function DocumentScreen() {
       type:      'document',
       label,
       fullLabel: title,
-      route:     DOCUMENT_OBJECT_ID,
+      route:     isCompDoc
+        ? `/document?page=${pageNo}${highlightParam ? `&highlight=${highlightParam}` : ''}`
+        : DOCUMENT_OBJECT_ID,
     })
   }, [openObject, label, title])
 

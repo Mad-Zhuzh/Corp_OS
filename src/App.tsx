@@ -40,6 +40,7 @@ function App() {
         <Route path="/services" element={<StubScreen section="Сервисы" />} />
         <Route path="/team" element={<StubScreen section="Команда" />} />
         <Route path="/settings" element={<StubScreen section="Настройки" />} />
+        <Route path="/mail" element={<StubScreen section="Почта" />} />
         <Route path="/help" element={<HelpScreen />} />
         <Route path="/onboarding/search" element={<OnboardingSearch />} />
       </Route>

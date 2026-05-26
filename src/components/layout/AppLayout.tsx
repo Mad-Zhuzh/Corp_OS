@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Outlet, useNavigate, useLocation } from 'react-router-dom'
+import { Outlet, useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { SearchDropdown } from '../search/SearchDropdown'
 import { OpenObjectsProvider } from '../../context/OpenObjectsContext'
 import { OpenObjectsBar } from '../shared/OpenObjectsBar'
@@ -62,9 +62,9 @@ interface NavItemDef {
 
 const NAV_ITEMS: NavItemDef[] = [
   { id: 'main',      label: 'Рабочая среда',     Icon: IconHouseOutline,       path: '/main' },
-  { id: 'tasks',     label: 'Задачи',            Icon: IconTaskHorizOutline,   path: '/tasks' },
   { id: 'documents', label: 'Файлы и документы', Icon: IconDocumentOutline,    path: '/documents' },
   { id: 'task',      label: 'Заявки',            Icon: IconDocumentAddOutline, path: '/task' },
+  { id: 'tasks',     label: 'Задачи',            Icon: IconTaskHorizOutline,   path: '/tasks' },
   { id: 'projects',  label: 'Проекты',           Icon: IconFolderOutline,      path: '/projects' },
   { id: 'services',  label: 'Сервисы',           Icon: IconAppsOutline,        path: '/services' },
   { id: 'team',      label: 'Команда',           Icon: IconPeopleGroupOutline,  path: '/team' },
@@ -83,7 +83,6 @@ const CRUMBS: Record<string, CrumbDef> = {
   '/task':           { section: 'Заявки', sub: 'Новая заявка' },
   '/tasks':          { section: 'Задачи' },
   '/documents':      { section: 'Файлы и документы' },
-  '/document':       { section: 'Файлы и документы', sub: 'Шаблон заявления на отпуск', sectionRoute: '/documents' },
   '/projects':       { section: 'Проекты' },
   '/services':       { section: 'Сервисы' },
   '/team':           { section: 'Команда' },
@@ -761,6 +760,7 @@ export function AppLayout() {
   const { zone } = useTourHighlight()
   const navigate = useNavigate()
   const location = useLocation()
+  const [searchParams] = useSearchParams()
   const [query, setQuery] = useState('')
   const [searchOpen, setSearchOpen] = useState(false)
   const [modeOpen, setModeOpen] = useState(false)
@@ -860,7 +860,21 @@ export function AppLayout() {
   }, [location.pathname])
 
   const sidebarWidth = collapsed ? SIDEBAR_MIN : mode === 'basic' ? SIDEBAR_BASIC : SIDEBAR_STD
-  const crumb = CRUMBS[location.pathname]
+
+  const docCrubSub = searchParams.get('page') !== null
+    ? 'Положение о компенсациях сотрудникам'
+    : 'Шаблон заявления на отпуск'
+  const crumb: CrumbDef | undefined = location.pathname === '/document'
+    ? { section: 'Файлы и документы', sub: docCrubSub, sectionRoute: '/documents' }
+    : CRUMBS[location.pathname]
+
+  function getActiveNavId(): string {
+    const { pathname } = location
+    if (pathname === '/document') return 'documents'
+    if (pathname === '/search') return 'main'
+    return NAV_ITEMS.find(i => i.path === pathname)?.id ?? ''
+  }
+  const activeNavId = getActiveNavId()
 
   function showToast(msg: string) {
     setToastMsg(msg)
@@ -940,7 +954,7 @@ export function AppLayout() {
                 onActionSelect={handleActionSelect}
                 onDocOpen={() => {
                   setSearchOpen(false)
-                  navigate('/main', { state: { pendingToast: 'Открываем документ на странице 6' } })
+                  navigate('/document?page=6&highlight=компенсаци')
                 }}
               />
             )}
@@ -1055,7 +1069,7 @@ export function AppLayout() {
 
             <SidebarNav>
               {NAV_ITEMS.map(item => {
-                const active = location.pathname === item.path
+                const active = item.id === activeNavId
                 return (
                   <NavBtn
                     key={item.id}

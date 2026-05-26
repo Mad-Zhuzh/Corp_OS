@@ -33,6 +33,12 @@ const ActionRow = styled.div`
   margin-top: 2rem;
 `
 
+const BtnRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+`
+
 const ChangeModeLink = styled.button`
   background: none;
   border: none;
@@ -134,6 +140,12 @@ interface TourProps {
 
 function BasicTour({ onDone, onChangeMode }: TourProps) {
   const { zone, setZone } = useTourHighlight()
+  const navigate = useNavigate()
+
+  function handleSkip() {
+    localStorage.setItem('corpOsOnboarded', '1')
+    navigate('/main')
+  }
 
   return (
     <>
@@ -158,7 +170,10 @@ function BasicTour({ onDone, onChangeMode }: TourProps) {
         ))}
       </BasicStepList>
       <ActionRow>
-        <Button view="primary" size="m" text="Попробовать поиск" onClick={onDone} />
+        <BtnRow>
+          <Button view="primary" size="m" text="Попробовать поиск" onClick={onDone} />
+          <Button view="secondary" size="m" text="Пропустить" onClick={handleSkip} />
+        </BtnRow>
         <ChangeModeLink onClick={onChangeMode}>Изменить режим</ChangeModeLink>
       </ActionRow>
     </>
@@ -254,6 +269,11 @@ function StandardTour({ onChangeMode }: TourProps) {
   const { zone, setZone } = useTourHighlight()
   const navigate = useNavigate()
 
+  function handleSkip() {
+    localStorage.setItem('corpOsOnboarded', '1')
+    navigate('/main')
+  }
+
   return (
     <>
       <PageTitle>Как начать работу в CorpOS</PageTitle>
@@ -285,7 +305,10 @@ function StandardTour({ onChangeMode }: TourProps) {
         ))}
       </StandardStepList>
       <ActionRow>
-        <Button view="primary" size="m" text="Попробовать поиск" onClick={() => navigate('/onboarding/search')} />
+        <BtnRow>
+          <Button view="primary" size="m" text="Попробовать поиск" onClick={() => navigate('/onboarding/search')} />
+          <Button view="secondary" size="m" text="Пропустить" onClick={handleSkip} />
+        </BtnRow>
         <ChangeModeLink onClick={onChangeMode}>Изменить режим</ChangeModeLink>
       </ActionRow>
     </>

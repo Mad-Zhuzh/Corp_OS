@@ -1,4 +1,5 @@
 import styled from 'styled-components'
+import { useNavigate } from 'react-router-dom'
 import { useUserMode } from '../../context/UserModeContext'
 import {
   SEARCH_DOC,
@@ -330,6 +331,11 @@ export function SearchDropdown({
   onDocOpen,
 }: SearchDropdownProps) {
   const { mode } = useUserMode()
+  const navigate = useNavigate()
+
+  function fileSelectHandler(file: MockFile) {
+    return file.id === 'f3' ? () => navigate('/document') : onAllResults
+  }
   const hasQuery = query.length > 0
   const recent = DD_RECENT[mode]
 
@@ -377,7 +383,7 @@ export function SearchDropdown({
             {matched && <DDDivider />}
             <DDLabel>Файлы</DDLabel>
             {fileRes.map(f => (
-              <FileRow key={f.id} file={f} onSelect={onAllResults} />
+              <FileRow key={f.id} file={f} onSelect={fileSelectHandler(f)} />
             ))}
           </DDSection>
         )}
@@ -430,7 +436,7 @@ export function SearchDropdown({
         )}
 
         {hasQuery && fileRes.length > 0 && fileRes.map(f => (
-          <FileRow key={f.id} file={f} onSelect={onAllResults} />
+          <FileRow key={f.id} file={f} onSelect={fileSelectHandler(f)} />
         ))}
 
         {hasQuery && !anyResult && (
@@ -495,7 +501,7 @@ export function SearchDropdown({
       )}
 
       {hasQuery && !isOpPrefix && fileRes.map(f => (
-        <ExpertFileRow key={f.id} file={f} onSelect={onAllResults} />
+        <ExpertFileRow key={f.id} file={f} onSelect={fileSelectHandler(f)} />
       ))}
 
       {hasQuery && !isOpPrefix && !anyResult && (

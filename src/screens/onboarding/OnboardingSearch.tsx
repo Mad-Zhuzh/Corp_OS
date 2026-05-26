@@ -86,7 +86,7 @@ export function OnboardingSearch() {
       <Title>Попробуйте поиск</Title>
       <TaskCard>
         <TaskLabel>Задание</TaskLabel>
-        <TaskText>Найдите документ «Инструкция по отпуску»</TaskText>
+        <TaskText>Найдите документ «Шаблон заявления на отпуск»</TaskText>
         <TaskHint>
           Введите название или несколько слов из него в строку поиска вверху страницы и нажмите Enter.
         </TaskHint>

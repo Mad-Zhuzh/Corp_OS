@@ -14,11 +14,11 @@ export const SEARCH_DOC = {
 // ─── Trigger matching ─────────────────────────────────────────────────────────
 
 export function isSearchMatch(query: string): boolean {
-  return query.toLowerCase().includes('компенсаци')
+  return query.toLowerCase().includes('комп')
 }
 
 export function isExpertMatch(query: string): boolean {
-  return query.toLowerCase().includes('компенсаци')
+  return query.toLowerCase().includes('комп')
 }
 
 export function isOperatorPrefix(query: string): boolean {

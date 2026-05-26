@@ -399,7 +399,7 @@ export function SearchScreen() {
     return (
       <div style={{ maxWidth: 640 }}>
         <PageTitle>
-          {mode === 'basic' ? 'Результаты поиска' : mode === 'standard' ? 'Глобальный поиск' : 'Поиск и действия'}
+          {mode === 'basic' ? 'Результаты поиска' : mode === 'standard' ? 'Результаты поиска' : 'Результаты поиска'}
         </PageTitle>
         <PageSubtitle>Введите запрос в строку поиска выше</PageSubtitle>
       </div>
@@ -436,7 +436,7 @@ export function SearchScreen() {
             {matched && <SectionLabel>Файлы</SectionLabel>}
             <FileResultsList>
               {fileRes.map(f => (
-                <FileRow key={f.id} file={f} onClick={() => navigate(`/document?page=1`)} />
+                <FileRow key={f.id} file={f} onClick={() => navigate('/document')} />
               ))}
             </FileResultsList>
           </FileResultsSection>
@@ -471,7 +471,7 @@ export function SearchScreen() {
     ]
     return (
       <StandardWrapper>
-        <PageTitle>Глобальный поиск</PageTitle>
+        <PageTitle>Результаты поиска</PageTitle>
         <PageSubtitle>
           {total > 0
             ? `Найдено ${total} ${total === 1 ? 'результат' : 'результата'} по запросу «${query}»`
@@ -503,7 +503,7 @@ export function SearchScreen() {
         {fileRes.length > 0 && (
           <FileResultsList style={{ marginTop: matched ? '0.5rem' : 0 }}>
             {fileRes.map(f => (
-              <FileRow key={f.id} file={f} onClick={() => navigate('/document?page=1')} />
+              <FileRow key={f.id} file={f} onClick={() => navigate('/document')} />
             ))}
           </FileResultsList>
         )}
@@ -529,7 +529,7 @@ export function SearchScreen() {
 
   return (
     <ExpertWrapper>
-      <PageTitle>Поиск и действия</PageTitle>
+      <PageTitle>Результаты поиска</PageTitle>
 
       <ExpertMeta>
         {typeFilter
@@ -552,7 +552,7 @@ export function SearchScreen() {
       {fileRes.map(f => {
         const s = TYPE_STYLE[f.type] ?? TYPE_STYLE.pdf
         return (
-          <ExpertResultRow key={f.id} onClick={() => navigate('/document?page=1')} style={{ cursor: 'pointer' }}>
+          <ExpertResultRow key={f.id} onClick={() => navigate('/document')} style={{ cursor: 'pointer' }}>
             <ExpertResultTop>
               <PdfIconSm style={{ background: s.bg, color: s.color, fontSize: '0.5625rem' }}>{f.type.toUpperCase()}</PdfIconSm>
               <ExpertResultTitle>{f.name}</ExpertResultTitle>

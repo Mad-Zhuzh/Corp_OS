@@ -10,7 +10,14 @@ interface UserModeContextType {
 const UserModeContext = createContext<UserModeContextType | null>(null)
 
 export function UserModeProvider({ children }: { children: ReactNode }) {
-  const [mode, setMode] = useState<UserMode>('basic')
+  const saved = localStorage.getItem('corpOsMode') as UserMode
+  const initial: UserMode = ['basic', 'standard', 'expert'].includes(saved) ? saved : 'basic'
+  const [mode, setModeState] = useState<UserMode>(initial)
+
+  function setMode(m: UserMode) {
+    localStorage.setItem('corpOsMode', m)
+    setModeState(m)
+  }
 
   return (
     <UserModeContext.Provider value={{ mode, setMode }}>
