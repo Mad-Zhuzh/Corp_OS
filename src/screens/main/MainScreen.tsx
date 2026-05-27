@@ -125,32 +125,6 @@ function WidgetWrap({ edit, settings, closeOnly, toolbarOutside, bare, toast, ch
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-type DeadlineStatus = 'overdue' | 'urgent' | 'later'
-
-function getDeadlineStatus(deadline: string): DeadlineStatus {
-  const [d, m] = deadline.split('.').map(Number)
-  const now = new Date()
-  const dl = new Date(now.getFullYear(), m - 1, d)
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  const tomorrow = new Date(today)
-  tomorrow.setDate(tomorrow.getDate() + 1)
-  if (dl < today) return 'overdue'
-  if (dl <= tomorrow) return 'urgent'
-  return 'later'
-}
-
-const STATUS_COLOR: Record<DeadlineStatus, string> = {
-  overdue: c.red,
-  urgent:  c.yellow,
-  later:   c.textTer,
-}
-
-const STATUS_TEXT: Record<DeadlineStatus, string> = {
-  overdue: 'Срочно',
-  urgent:  'В работе',
-  later:   'Плановая',
-}
-
 const ACTION_ROUTES: Record<string, string> = {
   'new-request':   '/task',
   'open-doc':      '/documents',
@@ -225,7 +199,7 @@ const BasicTaskBlock = styled.div`
   &:hover { box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06); }
 `
 
-const BasicTaskItem = styled.div<{ $status: DeadlineStatus }>`
+const BasicTaskItem = styled.div`
   display: flex;
   align-items: center;
   gap: 0.875rem;
@@ -235,20 +209,12 @@ const BasicTaskItem = styled.div<{ $status: DeadlineStatus }>`
   &:last-child { border-bottom: none; }
 `
 
-const BasicTaskStatus = styled.span<{ $status: DeadlineStatus }>`
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: ${({ $status }) => STATUS_COLOR[$status]};
-  white-space: nowrap;
-  flex-shrink: 0;
-`
-
-const BasicTaskDot = styled.span<{ $status: DeadlineStatus }>`
+const BasicTaskDot = styled.span<{ $color: string }>`
   width: 8px;
   height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
-  background: ${({ $status }) => STATUS_COLOR[$status]};
+  background: ${({ $color }) => $color};
 `
 
 const BasicTaskTitle = styled.span`
@@ -258,10 +224,10 @@ const BasicTaskTitle = styled.span`
   line-height: 1.4;
 `
 
-const BasicTaskDate = styled.span<{ $status: DeadlineStatus }>`
+const BasicTaskMeta = styled.span<{ $color: string }>`
   font-size: 0.8125rem;
   font-weight: 500;
-  color: ${({ $status }) => STATUS_COLOR[$status]};
+  color: ${({ $color }) => $color};
   white-space: nowrap;
   flex-shrink: 0;
 `
@@ -321,19 +287,15 @@ function BasicView({ isEditMode, showToast }: ViewProps) {
           <SecLabel>В работе</SecLabel>
           <BasicTaskBlock>
             {topTasks.map((t: Task, idx) => {
-              const status = getDeadlineStatus(t.deadline)
-              const statusLabel =
-                idx === 0 ? `Сегодня · ${t.deadline}` :
-                idx === 1 ? `Скоро · ${t.deadline}` :
-                STATUS_TEXT[status]
+              const meta =
+                idx === 0 ? { label: `Сегодня · ${t.deadline}`, color: '#d97706' } :
+                idx === 1 ? { label: `Скоро · ${t.deadline}`,   color: '#3b82f6' } :
+                            { label: t.deadline,                 color: '#374151' }
               return (
-                <BasicTaskItem key={t.id} $status={status}>
-                  <BasicTaskDot $status={status} />
+                <BasicTaskItem key={t.id}>
+                  <BasicTaskDot $color={meta.color} />
                   <BasicTaskTitle>{t.title}</BasicTaskTitle>
-                  <BasicTaskStatus $status={status}>{statusLabel}</BasicTaskStatus>
-                  {idx >= 2 && (
-                    <BasicTaskDate $status={status}>{t.deadline}</BasicTaskDate>
-                  )}
+                  <BasicTaskMeta $color={meta.color}>{meta.label}</BasicTaskMeta>
                 </BasicTaskItem>
               )
             })}

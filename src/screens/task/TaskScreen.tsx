@@ -953,6 +953,13 @@ function StandardFolderFlow({ initialFiles }: StandardFolderFlowProps) {
   const [comment, setComment]     = useState('')
   const [preview, setPreview]     = useState(false)
   const [done, setDone]           = useState(false)
+  const [deadlineErr, setDeadlineErr] = useState('')
+
+  function handleNext() {
+    if (!deadline.trim()) { setDeadlineErr('Укажите срок исполнения'); return }
+    setDeadlineErr('')
+    setPreview(true)
+  }
 
   function toggle(field: string) {
     setUnlocked(prev => { const n = new Set(prev); n.has(field) ? n.delete(field) : n.add(field); return n })
@@ -1086,7 +1093,12 @@ function StandardFolderFlow({ initialFiles }: StandardFolderFlowProps) {
 
             <FGroup>
               <FLabel $req>Срок исполнения</FLabel>
-              <DeadlineInput value={deadline} onChange={setDeadline} />
+              <DeadlineInput
+                value={deadline}
+                onChange={v => { setDeadline(v); if (v.trim()) setDeadlineErr('') }}
+                $err={!!deadlineErr}
+              />
+              {deadlineErr && <FError>{deadlineErr}</FError>}
             </FGroup>
             <FGroup>
               <FLabel $req>Приоритет</FLabel>
@@ -1098,7 +1110,7 @@ function StandardFolderFlow({ initialFiles }: StandardFolderFlowProps) {
             </FGroup>
 
             <ActRow>
-              <Button view="primary" size="m" text="Далее →" onClick={() => setPreview(true)} />
+              <Button view="primary" size="m" text="Далее →" onClick={handleNext} />
             </ActRow>
           </Card>
         </div>

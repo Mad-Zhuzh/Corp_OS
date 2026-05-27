@@ -192,7 +192,7 @@ export interface DropdownData {
 
 export const dropdownData: Record<'basic' | 'standard' | 'expert', DropdownData> = {
   basic: {
-    examples: ['заявление на отпуск', 'доступ к системе', 'мои задачи'],
+    examples: ['заявка на закупку', 'доступ к системе', 'мои задачи'],
     recent: ['политика ИБ', 'отчёт за апрель'],
   },
   standard: {

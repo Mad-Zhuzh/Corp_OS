@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from 'react'
 import styled from 'styled-components'
 import { useNavigate } from 'react-router-dom'
 import { useUserMode } from '../../context/UserModeContext'
@@ -98,13 +99,13 @@ const DDEmpty = styled.div`
   color: #9ca3af;
 `
 
-const DDAllResultsBtn = styled.button`
+const DDAllResultsBtn = styled.button<{ $active?: boolean }>`
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
   padding: 0.625rem 0.875rem;
-  background: #f8f9fa;
+  background: ${({ $active }) => ($active ? '#eef2ff' : '#f8f9fa')};
   border: none;
   border-top: 1px solid #e2e8f0;
   text-align: left;
@@ -249,18 +250,18 @@ const DDOpDesc = styled.span`
   color: #6b7280;
 `
 
-const DDExpertRow = styled.button`
+const DDExpertRow = styled.button<{ $active?: boolean }>`
   display: flex;
   align-items: center;
   gap: 0.5rem;
   width: 100%;
   padding: 0.5rem 0.875rem;
-  background: transparent;
+  background: ${({ $active }) => ($active ? '#eef2ff' : 'transparent')};
   border: none;
   text-align: left;
   cursor: pointer;
   font-family: inherit;
-  &:hover { background: #f8f9fa; }
+  &:hover { background: ${({ $active }) => ($active ? '#eef2ff' : '#f8f9fa')}; }
 `
 
 const DDExpertTitle = styled.span`
@@ -299,10 +300,10 @@ function FileRow({ file, onSelect }: { file: MockFile; onSelect: () => void }) {
   )
 }
 
-function ExpertFileRow({ file, onSelect }: { file: MockFile; onSelect: () => void }) {
+function ExpertFileRow({ file, onSelect, active }: { file: MockFile; onSelect: () => void; active?: boolean }) {
   const s = TYPE_STYLE[file.type] ?? TYPE_STYLE.pdf
   return (
-    <DDExpertRow onClick={onSelect}>
+    <DDExpertRow $active={active} onClick={onSelect}>
       <DDRowIcon style={{ background: s.bg, color: s.color }}>{file.type.toUpperCase()}</DDRowIcon>
       <DDExpertTitle>{file.name}</DDExpertTitle>
       <DDExpertMeta>{file.date}</DDExpertMeta>
@@ -332,6 +333,36 @@ export function SearchDropdown({
 }: SearchDropdownProps) {
   const { mode } = useUserMode()
   const navigate = useNavigate()
+
+  // ── Keyboard navigation (expert mode) ──────────────────────────────────────
+  const [activeIndex, setActiveIndex] = useState(-1)
+  const kbItemsRef = useRef<{ action: () => void }[]>([])
+  const activeIndexRef = useRef(-1)
+
+  useEffect(() => { setActiveIndex(-1); activeIndexRef.current = -1 }, [query])
+
+  useEffect(() => {
+    if (mode !== 'expert') return
+    function handler(e: KeyboardEvent) {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault()
+        e.stopPropagation()
+        const delta = e.key === 'ArrowDown' ? 1 : -1
+        const next = Math.max(-1, Math.min(activeIndexRef.current + delta, kbItemsRef.current.length - 1))
+        activeIndexRef.current = next
+        setActiveIndex(next)
+      } else if (e.key === 'Enter') {
+        const idx = activeIndexRef.current
+        if (idx >= 0 && idx < kbItemsRef.current.length) {
+          e.preventDefault()
+          e.stopPropagation()
+          kbItemsRef.current[idx].action()
+        }
+      }
+    }
+    document.addEventListener('keydown', handler, true)
+    return () => document.removeEventListener('keydown', handler, true)
+  }, [mode])
 
   function fileSelectHandler(file: MockFile) {
     return file.id === 'f3' ? () => navigate('/document') : onAllResults
@@ -459,6 +490,19 @@ export function SearchDropdown({
   const anyResult  = matched || fileRes.length > 0
   const actions    = DD_ACTIONS.expert
 
+  // Build keyboard-navigable items list and sync ref
+  const kbItems: { action: () => void }[] = []
+  if (hasQuery && !isOpPrefix) {
+    if (matched) kbItems.push({ action: () => navigate(`/document?page=${SEARCH_DOC.page}&highlight=компенсаци`) })
+    fileRes.forEach(f => kbItems.push({ action: fileSelectHandler(f) }))
+    kbItems.push({ action: onAllResults })
+  }
+  kbItemsRef.current = kbItems
+
+  const compDocKbIdx  = matched ? 0 : -1
+  const fileKbIdxBase = matched ? 1 : 0
+  const allResultsKbIdx = kbItems.length > 0 ? kbItems.length - 1 : -1
+
   return (
     <DropdownBox>
       {!hasQuery && (
@@ -492,7 +536,7 @@ export function SearchDropdown({
       )}
 
       {hasQuery && !isOpPrefix && matched && (
-        <DDExpertRow onClick={onAllResults}>
+        <DDExpertRow $active={activeIndex === compDocKbIdx} onClick={() => navigate(`/document?page=${SEARCH_DOC.page}&highlight=компенсаци`)}>
           <DDRowIcon>PDF</DDRowIcon>
           <DDExpertTitle>{SEARCH_DOC.name}</DDExpertTitle>
           <DDExpertMeta>стр. {SEARCH_DOC.page}</DDExpertMeta>
@@ -500,8 +544,13 @@ export function SearchDropdown({
         </DDExpertRow>
       )}
 
-      {hasQuery && !isOpPrefix && fileRes.map(f => (
-        <ExpertFileRow key={f.id} file={f} onSelect={fileSelectHandler(f)} />
+      {hasQuery && !isOpPrefix && fileRes.map((f, i) => (
+        <ExpertFileRow
+          key={f.id}
+          file={f}
+          onSelect={fileSelectHandler(f)}
+          active={activeIndex === fileKbIdxBase + i}
+        />
       ))}
 
       {hasQuery && !isOpPrefix && !anyResult && (
@@ -509,7 +558,7 @@ export function SearchDropdown({
       )}
 
       {hasQuery && !isOpPrefix && (
-        <DDAllResultsBtn onClick={onAllResults}>
+        <DDAllResultsBtn $active={activeIndex === allResultsKbIdx} onClick={onAllResults}>
           <span>Все результаты по запросу «{query}» →</span>
         </DDAllResultsBtn>
       )}
