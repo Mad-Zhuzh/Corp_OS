@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import styled from 'styled-components'
 import { Button } from '@salutejs/plasma-web'
 import { useNavigate, useSearchParams } from 'react-router-dom'
@@ -321,14 +321,15 @@ const ExpertMeta = styled.div`
   margin-bottom: 1.25rem;
 `
 
-const ExpertResultRow = styled.div`
+const ExpertResultRow = styled.div<{ $active?: boolean }>`
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
   padding: 0.625rem 0.5rem;
   border-radius: 6px;
   transition: background 0.1s;
-  &:hover { background: #f8f9fa; }
+  background: ${({ $active }) => ($active ? '#eef2ff' : 'transparent')};
+  &:hover { background: ${({ $active }) => ($active ? '#eef2ff' : '#f8f9fa')}; }
 `
 
 const ExpertResultTop = styled.div`
@@ -378,6 +379,39 @@ export function SearchScreen() {
   const query = searchParams.get('q') ?? ''
   const { openObject } = useOpenObjects()
 
+  // ── Keyboard navigation (expert mode) ──────────────────────────────────────
+  const [activeIndex, setActiveIndex] = useState(-1)
+  const kbItemsRef  = useRef<{ action: () => void }[]>([])
+  const activeIdxRef = useRef(-1)
+
+  useEffect(() => { setActiveIndex(-1); activeIdxRef.current = -1 }, [query])
+
+  useEffect(() => {
+    if (mode !== 'expert') return
+    function handler(e: KeyboardEvent) {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault()
+        e.stopPropagation()
+        const delta = e.key === 'ArrowDown' ? 1 : -1
+        const next = Math.max(-1, Math.min(activeIdxRef.current + delta, kbItemsRef.current.length - 1))
+        activeIdxRef.current = next
+        setActiveIndex(next)
+      } else if (e.key === 'Enter') {
+        const idx = activeIdxRef.current
+        if (idx >= 0 && idx < kbItemsRef.current.length) {
+          e.preventDefault()
+          e.stopPropagation()
+          kbItemsRef.current[idx].action()
+        }
+      } else if (e.key === 'Escape') {
+        activeIdxRef.current = -1
+        setActiveIndex(-1)
+      }
+    }
+    document.addEventListener('keydown', handler, true)
+    return () => document.removeEventListener('keydown', handler, true)
+  }, [mode])
+
   useEffect(() => {
     if (!query) return
     localStorage.setItem('corpOsOnboarded', '1')
@@ -392,6 +426,10 @@ export function SearchScreen() {
 
   function handleDocOpen() {
     navigate(`/document?page=${SEARCH_DOC.page}&highlight=компенсация`)
+  }
+
+  function fileClickHandler(file: MockFile): () => void {
+    return file.id === 'f3' ? () => navigate('/document') : () => {}
   }
 
   // ── No query ────────────────────────────────────────────────────────────────
@@ -436,7 +474,7 @@ export function SearchScreen() {
             {matched && <SectionLabel>Файлы</SectionLabel>}
             <FileResultsList>
               {fileRes.map(f => (
-                <FileRow key={f.id} file={f} onClick={() => navigate('/document')} />
+                <FileRow key={f.id} file={f} onClick={fileClickHandler(f)} />
               ))}
             </FileResultsList>
           </FileResultsSection>
@@ -503,7 +541,7 @@ export function SearchScreen() {
         {fileRes.length > 0 && (
           <FileResultsList style={{ marginTop: matched ? '0.5rem' : 0 }}>
             {fileRes.map(f => (
-              <FileRow key={f.id} file={f} onClick={() => navigate('/document')} />
+              <FileRow key={f.id} file={f} onClick={fileClickHandler(f)} />
             ))}
           </FileResultsList>
         )}
@@ -527,6 +565,15 @@ export function SearchScreen() {
     return { typeFilter: null as null, term: query.trim() }
   })()
 
+  // Build keyboard-navigable items and sync ref
+  const kbItems: { action: () => void }[] = []
+  if (matched) kbItems.push({ action: handleDocOpen })
+  fileRes.forEach(f => kbItems.push({ action: fileClickHandler(f) }))
+  kbItemsRef.current = kbItems
+
+  const compDocKbIdx  = matched ? 0 : -1
+  const fileKbIdxBase = matched ? 1 : 0
+
   return (
     <ExpertWrapper>
       <PageTitle>Результаты поиска</PageTitle>
@@ -538,21 +585,26 @@ export function SearchScreen() {
       </ExpertMeta>
 
       {matched && (
-        <ExpertResultRow>
+        <ExpertResultRow $active={activeIndex === compDocKbIdx} onClick={handleDocOpen} style={{ cursor: 'pointer' }}>
           <ExpertResultTop>
             <PdfIconSm>PDF</PdfIconSm>
             <ExpertResultTitle>{SEARCH_DOC.name}</ExpertResultTitle>
             <ExpertResultFileMeta>PDF · страница {SEARCH_DOC.page}</ExpertResultFileMeta>
-            <Button view="clear" size="xs" text={`Открыть на стр.${SEARCH_DOC.page}`} onClick={handleDocOpen} />
+            <Button view="clear" size="xs" text={`Открыть на стр.${SEARCH_DOC.page}`} onClick={e => { e.stopPropagation(); handleDocOpen() }} />
           </ExpertResultTop>
           <ExpertResultFragment>{SEARCH_DOC.fragment}</ExpertResultFragment>
         </ExpertResultRow>
       )}
 
-      {fileRes.map(f => {
+      {fileRes.map((f, i) => {
         const s = TYPE_STYLE[f.type] ?? TYPE_STYLE.pdf
         return (
-          <ExpertResultRow key={f.id} onClick={() => navigate('/document')} style={{ cursor: 'pointer' }}>
+          <ExpertResultRow
+            key={f.id}
+            $active={activeIndex === fileKbIdxBase + i}
+            onClick={fileClickHandler(f)}
+            style={{ cursor: f.id === 'f3' ? 'pointer' : 'default' }}
+          >
             <ExpertResultTop>
               <PdfIconSm style={{ background: s.bg, color: s.color, fontSize: '0.5625rem' }}>{f.type.toUpperCase()}</PdfIconSm>
               <ExpertResultTitle>{f.name}</ExpertResultTitle>
