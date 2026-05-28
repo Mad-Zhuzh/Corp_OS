@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, type ReactNode } from 'react'
+import { track } from '../utils/analytics'
 
 export type UserMode = 'basic' | 'standard' | 'expert'
 
@@ -17,6 +18,7 @@ export function UserModeProvider({ children }: { children: ReactNode }) {
   function setMode(m: UserMode) {
     localStorage.setItem('corpOsMode', m)
     setModeState(m)
+    track('mode-switched', { mode: m })
   }
 
   return (

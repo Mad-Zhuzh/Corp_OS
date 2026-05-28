@@ -33,6 +33,7 @@ const SecondaryButton = styled(Button)`
 import { useNavigate } from 'react-router-dom'
 import { useUserMode } from '../../context/UserModeContext'
 import { useTourHighlight, type HighlightZone } from '../../context/TourHighlightContext'
+import { track } from '../../utils/analytics'
 
 // ─── Shared styles ────────────────────────────────────────────────────────────
 
@@ -176,9 +177,11 @@ interface TourProps {
 
 function BasicTour({ onDone, onChangeMode }: TourProps) {
   const { zone, setZone } = useTourHighlight()
+  const { mode } = useUserMode()
   const navigate = useNavigate()
 
   function handleSkip() {
+    track('onboarding-skipped', { step: 'tour', mode })
     localStorage.setItem('corpOsOnboarded', '1')
     navigate('/main')
   }
@@ -299,9 +302,11 @@ const STANDARD_STEPS: StandardStepDef[] = [
 
 function StandardTour({ onChangeMode }: TourProps) {
   const { zone, setZone } = useTourHighlight()
+  const { mode } = useUserMode()
   const navigate = useNavigate()
 
   function handleSkip() {
+    track('onboarding-skipped', { step: 'tour', mode })
     localStorage.setItem('corpOsOnboarded', '1')
     navigate('/main')
   }

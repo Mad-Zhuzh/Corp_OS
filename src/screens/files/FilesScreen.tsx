@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { track } from '../../utils/analytics'
 import styled from 'styled-components'
 import { Button } from '@salutejs/plasma-web'
 
@@ -862,6 +863,7 @@ function ExpertFiles() {
   }
 
   function handleAddToRequest() {
+    track('files-to-task', { mode: 'expert', files_count: checkedFiles.size })
     const ids = Array.from(checkedFiles).join(',')
     navigate(`/task?source=folder&folder=roga&files=${ids}`)
   }

@@ -2,6 +2,8 @@ import { useEffect } from 'react'
 import styled from 'styled-components'
 import { useNavigate } from 'react-router-dom'
 import { useTourHighlight } from '../../context/TourHighlightContext'
+import { useUserMode } from '../../context/UserModeContext'
+import { track } from '../../utils/analytics'
 
 const Root = styled.div`
   display: flex;
@@ -71,6 +73,7 @@ const SkipLink = styled.button`
 
 export function OnboardingSearch() {
   const { setZone } = useTourHighlight()
+  const { mode } = useUserMode()
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -91,7 +94,7 @@ export function OnboardingSearch() {
           Введите название или несколько слов из него в строку поиска вверху страницы и нажмите Enter.
         </TaskHint>
       </TaskCard>
-      <SkipLink onClick={() => { localStorage.setItem('corpOsOnboarded', '1'); navigate('/main') }}>
+      <SkipLink onClick={() => { track('onboarding-skipped', { step: 'search', mode }); localStorage.setItem('corpOsOnboarded', '1'); navigate('/main') }}>
         Пропустить задание — перейти к работе
       </SkipLink>
     </Root>

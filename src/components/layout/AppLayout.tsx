@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Outlet, useNavigate, useLocation, useSearchParams } from 'react-router-dom'
+import { track } from '../../utils/analytics'
 import { SearchDropdown } from '../search/SearchDropdown'
 import { OpenObjectsProvider } from '../../context/OpenObjectsContext'
 import { OpenObjectsBar } from '../shared/OpenObjectsBar'
@@ -1089,7 +1090,7 @@ export function AppLayout() {
                       (zone === 'help' && item.id === 'help') ||
                       (zone === 'documents' && item.id === 'documents')
                     }
-                    onClick={() => navigate(item.path)}
+                    onClick={() => { track('nav-clicked', { section: item.id, mode }); navigate(item.path) }}
                     title={collapsed ? item.label : undefined}
                   >
                     <NavIcon $basic={mode === 'basic'}>

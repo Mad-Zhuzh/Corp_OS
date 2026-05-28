@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import styled from 'styled-components'
 import { Button } from '@salutejs/plasma-web'
 import { useNavigate } from 'react-router-dom'
+import { track } from '../../utils/analytics'
 
 const PrimaryButton = styled(Button)`
   && {
@@ -361,7 +362,8 @@ export function SearchDropdown({
   }, [mode])
 
   function fileSelectHandler(file: MockFile) {
-    return file.id === 'f3' ? () => navigate('/document') : onAllResults
+    const handler = file.id === 'f3' ? () => navigate('/document') : onAllResults
+    return () => { track('search-result-clicked', { mode, type: 'file' }); handler() }
   }
   const hasQuery = query.length > 0
   const recent = DD_RECENT[mode]
@@ -399,7 +401,7 @@ export function SearchDropdown({
               <DDBasicCardBody>
                 <DDBasicCardTitle>{SEARCH_DOC.shortName}</DDBasicCardTitle>
                 <DDBasicCardMeta>Документ · страница {SEARCH_DOC.page}</DDBasicCardMeta>
-                <PrimaryButton size="s" text="Открыть нужное место" onClick={onDocOpen} />
+                <PrimaryButton size="s" text="Открыть нужное место" onClick={() => { track('search-result-clicked', { mode, type: 'document' }); onDocOpen?.() }} />
               </DDBasicCardBody>
             </DDBasicCard>
           </>
@@ -420,7 +422,7 @@ export function SearchDropdown({
         )}
 
         {hasQuery && (
-          <DDAllResultsBtn onClick={onAllResults}>
+          <DDAllResultsBtn onClick={() => { track('search-result-clicked', { mode, type: 'all_results' }); onAllResults() }}>
             <span>Все результаты по запросу «{query}» →</span>
           </DDAllResultsBtn>
         )}
@@ -455,7 +457,7 @@ export function SearchDropdown({
         )}
 
         {hasQuery && matched && (
-          <DDRowBtn onClick={onAllResults}>
+          <DDRowBtn onClick={() => { track('search-result-clicked', { mode, type: 'document' }); onAllResults() }}>
             <DDRowIcon>PDF</DDRowIcon>
             <DDRowTitle>{SEARCH_DOC.shortName}</DDRowTitle>
             <DDRowMeta>страница {SEARCH_DOC.page}</DDRowMeta>
@@ -471,7 +473,7 @@ export function SearchDropdown({
         )}
 
         {hasQuery && (
-          <DDAllResultsBtn onClick={onAllResults}>
+          <DDAllResultsBtn onClick={() => { track('search-result-clicked', { mode, type: 'all_results' }); onAllResults() }}>
             <span>Все результаты по запросу «{query}» →</span>
           </DDAllResultsBtn>
         )}
@@ -532,7 +534,7 @@ export function SearchDropdown({
       )}
 
       {hasQuery && !isOpPrefix && matched && (
-        <DDExpertRow $active={activeIndex === compDocKbIdx} onClick={() => navigate(`/document?page=${SEARCH_DOC.page}&highlight=компенсаци`)}>
+        <DDExpertRow $active={activeIndex === compDocKbIdx} onClick={() => { track('search-result-clicked', { mode, type: 'document' }); navigate(`/document?page=${SEARCH_DOC.page}&highlight=компенсаци`) }}>
           <DDRowIcon>PDF</DDRowIcon>
           <DDExpertTitle>{SEARCH_DOC.name}</DDExpertTitle>
           <DDExpertMeta>стр. {SEARCH_DOC.page}</DDExpertMeta>
@@ -554,7 +556,7 @@ export function SearchDropdown({
       )}
 
       {hasQuery && !isOpPrefix && (
-        <DDAllResultsBtn $active={activeIndex === allResultsKbIdx} onClick={onAllResults}>
+        <DDAllResultsBtn $active={activeIndex === allResultsKbIdx} onClick={() => { track('search-result-clicked', { mode, type: 'all_results' }); onAllResults() }}>
           <span>Все результаты по запросу «{query}» →</span>
         </DDAllResultsBtn>
       )}

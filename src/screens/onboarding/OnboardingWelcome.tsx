@@ -10,6 +10,7 @@ const PrimaryButton = styled(Button)`
 `
 import { useNavigate } from 'react-router-dom'
 import { useUserMode } from '../../context/UserModeContext'
+import { track } from '../../utils/analytics'
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
@@ -79,6 +80,7 @@ export function OnboardingWelcome() {
   const { setMode } = useUserMode()
 
   function handleSkip() {
+    track('onboarding-skipped', { step: 'welcome' })
     localStorage.setItem('corpOsOnboarded', '1')
     setMode('standard')
     navigate('/main', {

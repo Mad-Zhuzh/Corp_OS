@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import styled from 'styled-components'
 import { Button } from '@salutejs/plasma-web'
+import { track } from '../../utils/analytics'
 
 const PrimaryButton = styled(Button)`
   && {
@@ -436,6 +437,8 @@ export function SearchScreen() {
   useEffect(() => {
     if (!query) return
     localStorage.setItem('corpOsOnboarded', '1')
+    const hasResults = isSearchMatch(query) || getFileResults(query).length > 0
+    track('search-executed', { mode, has_results: hasResults ? 1 : 0 })
     openObject({
       id: `search-${query}`,
       type: 'search',

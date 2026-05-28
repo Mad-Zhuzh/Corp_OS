@@ -25,6 +25,7 @@ const TertiaryButton = styled(Button)`
 `
 import { useNavigate } from 'react-router-dom'
 import { useUserMode, type UserMode } from '../../context/UserModeContext'
+import { track } from '../../utils/analytics'
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
@@ -562,7 +563,7 @@ export function OnboardingModeSelect() {
             <ModeCard
               key={opt.id}
               $active={isActive}
-              onClick={() => setMode(opt.id)}
+              onClick={() => { setMode(opt.id); track('onboarding-mode-selected', { mode: opt.id }) }}
             >
               {isRecommended && <RecommendBadge>Рекомендовано</RecommendBadge>}
 

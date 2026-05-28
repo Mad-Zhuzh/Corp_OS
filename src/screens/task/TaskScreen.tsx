@@ -1,4 +1,5 @@
 import { useState, useEffect, type MouseEvent } from 'react'
+import { track } from '../../utils/analytics'
 import styled from 'styled-components'
 import { Button } from '@salutejs/plasma-web'
 
@@ -828,7 +829,7 @@ function BasicFolderFlow({ initialFiles, onReset }: BasicFolderFlowProps) {
             <FlDataRow><FlDataKey>Файлы</FlDataKey><FlDataVal>{attachedFiles.length} прикреплённых файла ✓</FlDataVal></FlDataRow>
           </FlDataCard>
           <ActRow>
-            <PrimaryButton size="m" text="Отправить заявку" onClick={() => setDone(true)} />
+            <PrimaryButton size="m" text="Отправить заявку" onClick={() => { track('task-completed', { mode: 'basic', method: 'folder' }); setDone(true) }} />
             <SecondaryButton size="m" text="← Назад" onClick={() => setStep(3)} />
           </ActRow>
         </Card>
@@ -903,7 +904,7 @@ function BasicManualFlow({ onReset }: { onReset: () => void }) {
           <Textarea placeholder="Необязательно" value={comment} onChange={e => setComment(e.target.value)} />
         </FGroup>
         <ActRow>
-          <PrimaryButton size="m" text="Отправить заявку" onClick={() => setDone(true)} />
+          <PrimaryButton size="m" text="Отправить заявку" onClick={() => { track('task-completed', { mode: 'basic', method: 'manual' }); setDone(true) }} />
         </ActRow>
       </Card>
     </FlRoot>
@@ -1023,7 +1024,7 @@ function StandardFolderFlow({ initialFiles }: StandardFolderFlowProps) {
         </FlDataCard>
         <ActRow>
           <SecondaryButton size="m" text="← Назад" onClick={() => setPreview(false)} />
-          <PrimaryButton size="m" text="Отправить заявку" onClick={() => setDone(true)} />
+          <PrimaryButton size="m" text="Отправить заявку" onClick={() => { track('task-completed', { mode, method: 'folder' }); setDone(true) }} />
         </ActRow>
       </div>
     )
@@ -1168,6 +1169,7 @@ function ExpertFolderFlow() {
   ]
 
   function submit() {
+    track('task-completed', { mode: 'expert', method: 'folder' })
     navigate('/main', { state: { pendingToast: 'Заявка #1043 отправлена' } })
   }
 
@@ -1291,6 +1293,7 @@ export function TaskScreen() {
       setRequests(prev => [newReq, ...prev])
       setErrors({})
       setTaskState('success')
+      track('task-completed', { mode, method: 'form' })
     }
   }
 
@@ -1337,12 +1340,12 @@ export function TaskScreen() {
         <PageTitle style={{ marginBottom: '0.375rem' }}>Создание заявки</PageTitle>
         <PageSubtitle>Выберите, как вы хотите начать</PageSubtitle>
         <MethodGrid>
-          <MethodCard onClick={() => setRootEntry('files')}>
+          <MethodCard onClick={() => { track('task-method-selected', { mode: 'basic', method: 'files' }); setRootEntry('files') }}>
             <MethodIcon><IconFolderOutline size="s" color="#6374f1" /></MethodIcon>
             <MethodTitle>Из файлов</MethodTitle>
             <MethodDesc>Выберите документы — данные заполнятся автоматически</MethodDesc>
           </MethodCard>
-          <MethodCard onClick={() => setRootEntry('manual')}>
+          <MethodCard onClick={() => { track('task-method-selected', { mode: 'basic', method: 'manual' }); setRootEntry('manual') }}>
             <MethodIcon><IconEditOutline size="s" color="#6374f1" /></MethodIcon>
             <MethodTitle>Заполнить вручную</MethodTitle>
             <MethodDesc>Введите все данные самостоятельно шаг за шагом</MethodDesc>
