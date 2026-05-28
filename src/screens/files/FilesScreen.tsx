@@ -5,12 +5,12 @@ import { Button } from '@salutejs/plasma-web'
 const SecondaryButton = styled(Button)`
   && {
     background-color: #E5E7EB !important;
-    color: #201e2b !important;
-    * { color: #201e2b !important; }
+    color: #282538 !important;
+    * { color: #282538 !important; }
     &:hover {
       background-color: #D1D5DB !important;
       box-shadow: 0 1px 4px rgba(0,0,0,0.10);
-      * { color: #201e2b !important; }
+      * { color: #282538 !important; }
     }
   }
 `

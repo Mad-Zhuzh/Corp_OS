@@ -173,7 +173,7 @@ const HeaderSpacer = styled.div`
 const Logo = styled.div`
   font-size: 1.125rem;
   font-weight: 700;
-  color: #201e2b;
+  color: #282538;
   letter-spacing: -0.025em;
   white-space: nowrap;
   cursor: pointer;
@@ -256,7 +256,7 @@ const ModePill = styled.button<{ $open: boolean; $highlighted?: boolean }>`
   border: 1px solid transparent;
   border-radius: 8px;
   background: ${({ $open }) => ($open ? '#d1d5db' : '#e5e7eb')};
-  color: #201e2b;
+  color: #282538;
   font-size: 0.8125rem;
   font-weight: 500;
   cursor: pointer;
@@ -415,14 +415,14 @@ const ClockInner = styled.div`
 const ClockTime = styled.div`
   font-size: 0.9375rem;
   font-weight: 600;
-  color: #201e2b;
+  color: #282538;
   letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
 `
 
 const ClockDate = styled.div`
   font-size: 0.6875rem;
-  color: #201e2b;
+  color: #282538;
 `
 
 const CalPopover = styled.div`

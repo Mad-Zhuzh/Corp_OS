@@ -4,7 +4,7 @@ import { Button } from '@salutejs/plasma-web'
 
 const PrimaryButton = styled(Button)`
   && {
-    background-color: #201e2b !important;
+    background-color: #282538 !important;
     color: #FFFFFF !important;
     &:hover { background-color: #332f47 !important; }
   }
