@@ -1,6 +1,27 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, type MouseEvent } from 'react'
 import styled from 'styled-components'
 import { Button } from '@salutejs/plasma-web'
+
+const PrimaryButton = styled(Button)`
+  && {
+    background-color: #2F3A4C !important;
+    color: #FFFFFF !important;
+    &:hover { background-color: #1F2937 !important; }
+  }
+`
+
+const SecondaryButton = styled(Button)`
+  && {
+    background-color: #E5E7EB !important;
+    color: #2F3A4C !important;
+    * { color: #2F3A4C !important; }
+    &:hover {
+      background-color: #D1D5DB !important;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+      * { color: #2F3A4C !important; }
+    }
+  }
+`
 import { IconFolderOutline, IconEditOutline, IconDoneCircleOutline } from '@salutejs/plasma-icons'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useUserMode } from '../../context/UserModeContext'
@@ -375,8 +396,8 @@ function StandardTaskView({ form, update, errors, taskState, requests, onReview,
               Подтверждение придёт на корпоративную почту. Статус можно проверить в списке заявок.
             </SuccessDesc>
             <ActRow>
-              <Button view="primary" size="m" text="На главный экран" onClick={onGoToMain} />
-              <Button view="secondary" size="m" text="Создать ещё одну" onClick={onReset} />
+              <PrimaryButton size="m" text="На главный экран" onClick={onGoToMain} />
+              <SecondaryButton size="m" text="Создать ещё одну" onClick={onReset} />
             </ActRow>
           </SuccessBox>
         )}
@@ -388,8 +409,8 @@ function StandardTaskView({ form, update, errors, taskState, requests, onReview,
             <Card>
               <ReviewData form={form} />
               <ActRow>
-                <Button view="primary" size="m" text="Отправить" onClick={onSubmit} />
-                <Button view="secondary" size="m" text="Редактировать" onClick={onEdit} />
+                <PrimaryButton size="m" text="Отправить" onClick={onSubmit} />
+                <SecondaryButton size="m" text="Редактировать" onClick={onEdit} />
               </ActRow>
             </Card>
           </>
@@ -454,7 +475,7 @@ function StandardTaskView({ form, update, errors, taskState, requests, onReview,
               </FGroup>
 
               <ActRow>
-                <Button view="primary" size="m" text="Проверить заявку" onClick={onReview} />
+                <PrimaryButton size="m" text="Проверить заявку" onClick={onReview} />
               </ActRow>
             </Card>
           </>
@@ -699,8 +720,8 @@ function BasicFolderFlow({ initialFiles, onReset }: BasicFolderFlowProps) {
             Ваша заявка передана в отдел закупок. Мы уведомим вас о результате.
           </SuccessScreenText>
           <ActRow style={{ marginTop: '0.5rem' }}>
-            <Button view="primary" size="m" text="Создать ещё одну заявку" onClick={onReset} />
-            <Button view="secondary" size="m" text="На главную" onClick={() => navigate('/main')} />
+            <PrimaryButton size="m" text="Создать ещё одну заявку" onClick={onReset} />
+            <SecondaryButton size="m" text="На главную" onClick={() => navigate('/main')} />
           </ActRow>
         </SuccessScreenWrap>
       </FlRoot>
@@ -719,7 +740,7 @@ function BasicFolderFlow({ initialFiles, onReset }: BasicFolderFlowProps) {
             <FileDropZone onClick={() => setPickerOpen(true)}>
               <IconFolderOutline size="m" color="#9ca3af" />
               <FileDropZoneText>Добавьте файлы</FileDropZoneText>
-              <Button view="secondary" size="s" text="Выбрать файлы" onClick={e => { e.stopPropagation(); setPickerOpen(true) }} />
+              <SecondaryButton size="s" text="Выбрать файлы" onClick={(e: MouseEvent) => { e.stopPropagation(); setPickerOpen(true) }} />
             </FileDropZone>
           ) : (
             <>
@@ -735,8 +756,8 @@ function BasicFolderFlow({ initialFiles, onReset }: BasicFolderFlowProps) {
                 )
               })}
               <ActRow>
-                <Button view="primary" size="m" text="Далее →" onClick={tryNext} />
-                <Button view="secondary" size="m" text="Изменить файлы" onClick={() => setPickerOpen(true)} />
+                <PrimaryButton size="m" text="Далее →" onClick={tryNext} />
+                <SecondaryButton size="m" text="Изменить файлы" onClick={() => setPickerOpen(true)} />
               </ActRow>
             </>
           )}
@@ -760,8 +781,8 @@ function BasicFolderFlow({ initialFiles, onReset }: BasicFolderFlowProps) {
             <FlDataRow><FlDataKey>Назначение</FlDataKey><FlDataVal>{FOLDER_REQ.purpose}</FlDataVal></FlDataRow>
           </FlDataCard>
           <ActRow>
-            <Button view="primary" size="m" text="Верно →" onClick={tryNext} />
-            <Button view="secondary" size="m" text="← Назад" onClick={() => { setStepErr(''); setStep(1) }} />
+            <PrimaryButton size="m" text="Верно →" onClick={tryNext} />
+            <SecondaryButton size="m" text="← Назад" onClick={() => { setStepErr(''); setStep(1) }} />
           </ActRow>
         </Card>
       )}
@@ -785,8 +806,8 @@ function BasicFolderFlow({ initialFiles, onReset }: BasicFolderFlowProps) {
             <FHint>Необязательно</FHint>
           </FGroup>
           <ActRow>
-            <Button view="primary" size="m" text="Продолжить →" onClick={tryNext} />
-            <Button view="secondary" size="m" text="← Назад" onClick={() => { setStepErr(''); setStep(2) }} />
+            <PrimaryButton size="m" text="Продолжить →" onClick={tryNext} />
+            <SecondaryButton size="m" text="← Назад" onClick={() => { setStepErr(''); setStep(2) }} />
           </ActRow>
         </Card>
       )}
@@ -808,8 +829,8 @@ function BasicFolderFlow({ initialFiles, onReset }: BasicFolderFlowProps) {
             <FlDataRow><FlDataKey>Файлы</FlDataKey><FlDataVal>{attachedFiles.length} из {attachedFiles.length} ✓</FlDataVal></FlDataRow>
           </FlDataCard>
           <ActRow>
-            <Button view="primary" size="m" text="Отправить заявку" onClick={() => setDone(true)} />
-            <Button view="secondary" size="m" text="← Назад" onClick={() => setStep(3)} />
+            <PrimaryButton size="m" text="Отправить заявку" onClick={() => setDone(true)} />
+            <SecondaryButton size="m" text="← Назад" onClick={() => setStep(3)} />
           </ActRow>
         </Card>
       )}
@@ -840,8 +861,8 @@ function BasicManualFlow({ onReset }: { onReset: () => void }) {
             Ваша заявка передана в отдел закупок. Мы уведомим вас о результате.
           </SuccessScreenText>
           <ActRow style={{ marginTop: '0.5rem' }}>
-            <Button view="primary" size="m" text="Создать ещё одну заявку" onClick={onReset} />
-            <Button view="secondary" size="m" text="На главную" onClick={() => navigate('/main')} />
+            <PrimaryButton size="m" text="Создать ещё одну заявку" onClick={onReset} />
+            <SecondaryButton size="m" text="На главную" onClick={() => navigate('/main')} />
           </ActRow>
         </SuccessScreenWrap>
       </FlRoot>
@@ -883,7 +904,7 @@ function BasicManualFlow({ onReset }: { onReset: () => void }) {
           <Textarea placeholder="Необязательно" value={comment} onChange={e => setComment(e.target.value)} />
         </FGroup>
         <ActRow>
-          <Button view="primary" size="m" text="Отправить заявку" onClick={() => setDone(true)} />
+          <PrimaryButton size="m" text="Отправить заявку" onClick={() => setDone(true)} />
         </ActRow>
       </Card>
     </FlRoot>
@@ -983,8 +1004,8 @@ function StandardFolderFlow({ initialFiles }: StandardFolderFlowProps) {
           </SuccessScreenNote>
         )}
         <ActRow style={{ marginTop: '1rem' }}>
-          <Button view="primary" size="m" text="Создать ещё" onClick={() => { setDone(false); setPreview(false); setAttachedFiles([]); setEditVals(emptyVals); setDeadline(''); setComment('') }} />
-          <Button view="secondary" size="m" text="На главную" onClick={() => navigate('/main')} />
+          <PrimaryButton size="m" text="Создать ещё" onClick={() => { setDone(false); setPreview(false); setAttachedFiles([]); setEditVals(emptyVals); setDeadline(''); setComment('') }} />
+          <SecondaryButton size="m" text="На главную" onClick={() => navigate('/main')} />
         </ActRow>
       </SuccessScreenWrap>
     )
@@ -1004,8 +1025,8 @@ function StandardFolderFlow({ initialFiles }: StandardFolderFlowProps) {
           <FlDataRow><FlDataKey>Файлы</FlDataKey><FlDataVal>{attachedFiles.length}</FlDataVal></FlDataRow>
         </FlDataCard>
         <ActRow>
-          <Button view="secondary" size="m" text="← Назад" onClick={() => setPreview(false)} />
-          <Button view="primary" size="m" text="Отправить заявку" onClick={() => setDone(true)} />
+          <SecondaryButton size="m" text="← Назад" onClick={() => setPreview(false)} />
+          <PrimaryButton size="m" text="Отправить заявку" onClick={() => setDone(true)} />
         </ActRow>
       </div>
     )
@@ -1028,7 +1049,7 @@ function StandardFolderFlow({ initialFiles }: StandardFolderFlowProps) {
               <FileDropZone onClick={() => setPickerOpen(true)}>
                 <IconFolderOutline size="m" color="#9ca3af" />
                 <FileDropZoneText>Добавьте файлы для автозаполнения</FileDropZoneText>
-                <Button view="secondary" size="s" text="Выбрать файлы" onClick={e => { e.stopPropagation(); setPickerOpen(true) }} />
+                <SecondaryButton size="s" text="Выбрать файлы" onClick={(e: MouseEvent) => { e.stopPropagation(); setPickerOpen(true) }} />
               </FileDropZone>
             ) : (
               <>
@@ -1041,7 +1062,7 @@ function StandardFolderFlow({ initialFiles }: StandardFolderFlowProps) {
                     </StdFolderFileCard>
                   )
                 })}
-                <Button view="secondary" size="xs" text="Добавить ещё" style={{ marginTop: '0.625rem', width: '100%' }} onClick={() => setPickerOpen(true)} />
+                <SecondaryButton size="xs" text="Добавить ещё" style={{ marginTop: '0.625rem', width: '100%' }} onClick={() => setPickerOpen(true)} />
                 <div style={{ fontSize: '0.75rem', color: c.textTer, marginTop: '0.5rem' }}>
                   Данные извлечены автоматически
                 </div>
@@ -1110,7 +1131,7 @@ function StandardFolderFlow({ initialFiles }: StandardFolderFlowProps) {
             </FGroup>
 
             <ActRow>
-              <Button view="primary" size="m" text="Далее →" onClick={handleNext} />
+              <PrimaryButton size="m" text="Далее →" onClick={handleNext} />
             </ActRow>
           </Card>
         </div>
@@ -1195,9 +1216,9 @@ function ExpertFolderFlow() {
       )}
 
       <ExpFlBtnRow>
-        <Button view="primary" size="s" text="Отправить" disabled={!hasRequired} onClick={submit} />
-        <Button
-          view="secondary" size="s"
+        <PrimaryButton size="s" text="Отправить" disabled={!hasRequired} onClick={submit} />
+        <SecondaryButton
+          size="s"
           text={editOpen ? 'Готово' : 'Редактировать'}
           onClick={() => setEditOpen(v => !v)}
         />

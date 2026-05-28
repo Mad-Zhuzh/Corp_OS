@@ -1,6 +1,46 @@
 import { useEffect, useState } from 'react'
 import styled from 'styled-components'
 import { Button } from '@salutejs/plasma-web'
+import {
+  IconFileCheckOutline,
+  IconDownload,
+  IconClose,
+} from '@salutejs/plasma-icons'
+
+const PrimaryButton = styled(Button)`
+  && {
+    background-color: #2F3A4C !important;
+    color: #FFFFFF !important;
+    &:hover { background-color: #1F2937 !important; }
+  }
+`
+
+const SecondaryButton = styled(Button)`
+  && {
+    background-color: #E5E7EB !important;
+    color: #334155 !important;
+    * { color: #334155 !important; }
+    &:hover {
+      background-color: #D1D5DB !important;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+      * { color: #334155 !important; }
+    }
+  }
+`
+
+const TertiaryButton = styled(Button)`
+  && {
+    background-color: #F3F4F6 !important;
+    color: #4B5563 !important;
+    * { color: #4B5563 !important; }
+    box-shadow: none !important;
+    &:hover {
+      background-color: #E5E7EB !important;
+      color: #374151 !important;
+      * { color: #374151 !important; }
+    }
+  }
+`
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useOpenObjects } from '../../context/OpenObjectsContext'
 
@@ -232,24 +272,24 @@ export function DocumentScreen() {
       </DocCard>
 
       <ActRow>
-        <Button
-          view="secondary"
-          size="m"
-          text="Скачать"
-          onClick={() => showToast('Документ скачан')}
-        />
         {!isCompDoc && (
-          <Button
-            view="secondary"
+          <PrimaryButton
             size="m"
             text="Использовать шаблон"
+            contentLeft={<IconFileCheckOutline size="xs" color="currentColor" />}
             onClick={() => showToast('Шаблон добавлен')}
           />
         )}
-        <Button
-          view="secondary"
+        <SecondaryButton
+          size="m"
+          text="Скачать"
+          contentLeft={<IconDownload size="xs" color="currentColor" />}
+          onClick={() => showToast('Документ скачан')}
+        />
+        <TertiaryButton
           size="m"
           text="Закрыть"
+          contentLeft={<IconClose size="xs" color="currentColor" />}
           onClick={() => {
             closeObject(DOCUMENT_OBJECT_ID)
             if (objects.length <= 1) navigate('/documents')

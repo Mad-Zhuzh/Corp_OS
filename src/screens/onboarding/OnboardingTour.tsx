@@ -1,5 +1,35 @@
 import styled from 'styled-components'
 import { Button } from '@salutejs/plasma-web'
+import {
+  IconSearch,
+  IconPanelSidebarLOutline,
+  IconHouseOutline,
+  IconInfoCircleOutline,
+  IconDocumentOutline,
+} from '@salutejs/plasma-icons'
+import type { FC } from 'react'
+import type { IconProps } from '@salutejs/plasma-icons'
+
+const PrimaryButton = styled(Button)`
+  && {
+    background-color: #2F3A4C !important;
+    color: #FFFFFF !important;
+    &:hover { background-color: #1F2937 !important; }
+  }
+`
+
+const SecondaryButton = styled(Button)`
+  && {
+    background-color: #E5E7EB !important;
+    color: #2F3A4C !important;
+    * { color: #2F3A4C !important; }
+    &:hover {
+      background-color: #D1D5DB !important;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+      * { color: #2F3A4C !important; }
+    }
+  }
+`
 import { useNavigate } from 'react-router-dom'
 import { useUserMode } from '../../context/UserModeContext'
 import { useTourHighlight, type HighlightZone } from '../../context/TourHighlightContext'
@@ -72,13 +102,14 @@ const BasicStep = styled.div<{ $active: boolean }>`
   transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
 `
 
-const StepNumber = styled.div<{ $active: boolean }>`
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: ${({ $active }) => ($active ? '#c7d2fe' : '#e0e7ff')};
-  line-height: 1;
+const StepIconWrap = styled.div<{ $active: boolean }>`
+  width: 2.25rem;
+  height: 2.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
-  width: 2rem;
+  color: #528DFA;
   transition: color 0.15s;
 `
 
@@ -104,6 +135,7 @@ interface BasicStepDef {
   title: string
   desc: string
   zone: HighlightZone
+  Icon: FC<IconProps>
 }
 
 const BASIC_STEPS: BasicStepDef[] = [
@@ -112,24 +144,28 @@ const BASIC_STEPS: BasicStepDef[] = [
     title: 'Поиск',
     desc: 'Напишите, что нужно найти или сделать — обычными словами.',
     zone: 'search',
+    Icon: IconSearch,
   },
   {
     n: '2',
     title: 'Разделы',
     desc: 'Используйте боковое меню, чтобы перейти к задачам, документам, заявкам или сервисам.',
     zone: 'sidebar',
+    Icon: IconPanelSidebarLOutline,
   },
   {
     n: '3',
     title: 'Рабочая среда',
     desc: 'Здесь открываются задачи, документы, формы и результаты поиска.',
     zone: 'content',
+    Icon: IconHouseOutline,
   },
   {
     n: '4',
     title: 'Помощь',
     desc: 'Система подскажет следующий шаг, объяснит ошибки и поможет вернуться к задаче.',
     zone: 'help',
+    Icon: IconInfoCircleOutline,
   },
 ]
 
@@ -161,7 +197,9 @@ function BasicTour({ onDone, onChangeMode }: TourProps) {
             onMouseEnter={() => setZone(s.zone)}
             onMouseLeave={() => setZone(null)}
           >
-            <StepNumber $active={zone === s.zone}>{s.n}</StepNumber>
+            <StepIconWrap $active={zone === s.zone}>
+              <s.Icon size="s" color="currentColor" />
+            </StepIconWrap>
             <StepBody>
               <StepTitle>{s.title}</StepTitle>
               <StepDesc>{s.desc}</StepDesc>
@@ -171,8 +209,8 @@ function BasicTour({ onDone, onChangeMode }: TourProps) {
       </BasicStepList>
       <ActionRow>
         <BtnRow>
-          <Button view="primary" size="m" text="Попробовать поиск" onClick={onDone} />
-          <Button view="secondary" size="m" text="Пропустить" onClick={handleSkip} />
+          <PrimaryButton size="m" text="Попробовать поиск" onClick={onDone} />
+          <SecondaryButton size="m" text="Пропустить" onClick={handleSkip} />
         </BtnRow>
         <ChangeModeLink onClick={onChangeMode}>Изменить режим</ChangeModeLink>
       </ActionRow>
@@ -202,16 +240,6 @@ const StandardStep = styled.div<{ $active: boolean }>`
   transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
 `
 
-const StandardStepNumber = styled.div<{ $active: boolean }>`
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: ${({ $active }) => ($active ? '#c7d2fe' : '#e0e7ff')};
-  line-height: 1;
-  flex-shrink: 0;
-  width: 1.75rem;
-  transition: color 0.15s;
-`
-
 const StandardStepBody = styled.div`
   flex: 1;
 `
@@ -238,6 +266,7 @@ interface StandardStepDef {
   title: string
   desc: string
   zone: HighlightZone
+  Icon: FC<IconProps>
   action: { label: string; view: 'primary' | 'secondary'; nav: string } | null
 }
 
@@ -247,6 +276,7 @@ const STANDARD_STEPS: StandardStepDef[] = [
     title: 'Разделы',
     desc: 'Используйте боковое меню, чтобы перейти к задачам, документам или сервисам.',
     zone: 'sidebar',
+    Icon: IconPanelSidebarLOutline,
     action: null,
   },
   {
@@ -254,13 +284,15 @@ const STANDARD_STEPS: StandardStepDef[] = [
     title: 'Файлы и документы',
     desc: 'Откройте последние документы или перейдите к файловой структуре.',
     zone: 'documents',
-    action: { label: 'Открыть файлы', view: 'secondary', nav: '/documents' },
+    Icon: IconDocumentOutline,
+    action: null,
   },
   {
     n: '3',
     title: 'Поиск',
     desc: 'Найдите документ, раздел или действие по названию или смыслу.',
     zone: 'search',
+    Icon: IconSearch,
     action: null,
   },
 ]
@@ -286,7 +318,9 @@ function StandardTour({ onChangeMode }: TourProps) {
             onMouseEnter={() => setZone(s.zone)}
             onMouseLeave={() => setZone(null)}
           >
-            <StandardStepNumber $active={zone === s.zone}>{s.n}</StandardStepNumber>
+            <StepIconWrap $active={zone === s.zone}>
+              <s.Icon size="s" color="currentColor" />
+            </StepIconWrap>
             <StandardStepBody>
               <StandardStepTitle>{s.title}</StandardStepTitle>
               <StandardStepDesc>{s.desc}</StandardStepDesc>
@@ -306,8 +340,8 @@ function StandardTour({ onChangeMode }: TourProps) {
       </StandardStepList>
       <ActionRow>
         <BtnRow>
-          <Button view="primary" size="m" text="Попробовать поиск" onClick={() => navigate('/onboarding/search')} />
-          <Button view="secondary" size="m" text="Пропустить" onClick={handleSkip} />
+          <PrimaryButton size="m" text="Попробовать поиск" onClick={() => navigate('/onboarding/search')} />
+          <SecondaryButton size="m" text="Пропустить" onClick={handleSkip} />
         </BtnRow>
         <ChangeModeLink onClick={onChangeMode}>Изменить режим</ChangeModeLink>
       </ActionRow>
@@ -402,7 +436,7 @@ function ExpertTour({ onDone, onChangeMode }: TourProps) {
         </ExpertFeatureList>
       </ExpertCard>
       <ExpertActionRow>
-        <Button view="primary" size="m" text="Начать работу" onClick={onDone} />
+        <PrimaryButton size="m" text="Начать работу" onClick={onDone} />
         <ChangeModeLink onClick={onChangeMode}>Изменить режим</ChangeModeLink>
       </ExpertActionRow>
     </>

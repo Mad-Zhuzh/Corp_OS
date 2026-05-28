@@ -1,5 +1,13 @@
 import styled from 'styled-components'
 import { Button } from '@salutejs/plasma-web'
+
+const PrimaryButton = styled(Button)`
+  && {
+    background-color: #2F3A4C !important;
+    color: #FFFFFF !important;
+    &:hover { background-color: #1F2937 !important; }
+  }
+`
 import { useNavigate } from 'react-router-dom'
 import { useUserMode } from '../../context/UserModeContext'
 
@@ -95,8 +103,7 @@ export function OnboardingWelcome() {
       </ModeHint>
 
       <Actions>
-        <Button
-          view="primary"
+        <PrimaryButton
           size="m"
           text="Настроить режим"
           onClick={() => navigate('/onboarding/mode')}

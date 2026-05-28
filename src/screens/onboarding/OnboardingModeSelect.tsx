@@ -1,6 +1,28 @@
 import { useState } from 'react'
 import styled from 'styled-components'
 import { Button } from '@salutejs/plasma-web'
+
+const PrimaryButton = styled(Button)`
+  && {
+    background-color: #2F3A4C !important;
+    color: #FFFFFF !important;
+    &:hover { background-color: #1F2937 !important; }
+  }
+`
+
+const TertiaryButton = styled(Button)`
+  && {
+    background-color: #F3F4F6 !important;
+    color: #4B5563 !important;
+    * { color: #4B5563 !important; }
+    box-shadow: none !important;
+    &:hover {
+      background-color: #E5E7EB !important;
+      color: #374151 !important;
+      * { color: #374151 !important; }
+    }
+  }
+`
 import { useNavigate } from 'react-router-dom'
 import { useUserMode, type UserMode } from '../../context/UserModeContext'
 
@@ -211,32 +233,6 @@ const QuizNav = styled.div`
   gap: 1rem;
 `
 
-const QuizNextBtn = styled.button<{ $enabled: boolean }>`
-  padding: 0.4rem 1rem;
-  border-radius: 8px;
-  border: 1.5px solid ${({ $enabled }) => ($enabled ? '#6366f1' : '#e5e7eb')};
-  background: ${({ $enabled }) => ($enabled ? '#6366f1' : '#f3f4f6')};
-  color: ${({ $enabled }) => ($enabled ? '#ffffff' : '#9ca3af')};
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: ${({ $enabled }) => ($enabled ? 'pointer' : 'default')};
-  transition: background 0.12s, border-color 0.12s;
-  &:hover {
-    background: ${({ $enabled }) => ($enabled ? '#4f46e5' : '#f3f4f6')};
-    border-color: ${({ $enabled }) => ($enabled ? '#4f46e5' : '#e5e7eb')};
-  }
-`
-
-const QuizBackLink = styled.button`
-  background: none;
-  border: none;
-  padding: 0;
-  font-size: 0.875rem;
-  color: #9ca3af;
-  cursor: pointer;
-  transition: color 0.1s;
-  &:hover { color: #6b7280; }
-`
 
 // ─── Result ───────────────────────────────────────────────────────────────────
 
@@ -533,11 +529,14 @@ export function OnboardingModeSelect() {
                 ))}
               </OptionsList>
               <QuizNav>
-                <QuizNextBtn $enabled={pendingAnswer !== null} onClick={handleNext}>
-                  Далее
-                </QuizNextBtn>
+                <PrimaryButton
+                  size="s"
+                  text="Далее"
+                  disabled={pendingAnswer === null}
+                  onClick={handleNext}
+                />
                 {step > 1 && (
-                  <QuizBackLink onClick={handleBack}>Назад</QuizBackLink>
+                  <TertiaryButton size="s" text="Назад" onClick={handleBack} />
                 )}
               </QuizNav>
             </>
@@ -554,8 +553,8 @@ export function OnboardingModeSelect() {
         </QuizBlock>
       )}
 
-      {/* ─── Cards ────────────────────────────────────────────────────── */}
-      <CardsRow>
+      {/* ─── Cards: показываем только если опрос не открыт или уже завершён ── */}
+      {(!quizOpen || step === 'done') && <CardsRow>
         {MODE_OPTIONS.map((opt) => {
           const isActive = mode === opt.id
           const isRecommended = recommended === opt.id
@@ -591,16 +590,17 @@ export function OnboardingModeSelect() {
             </ModeCard>
           )
         })}
-      </CardsRow>
+      </CardsRow>}
 
       {/* ─── Actions ──────────────────────────────────────────────────── */}
       <Actions>
-        <Button
-          view="primary"
-          size="m"
-          text="Продолжить"
-          onClick={() => navigate('/onboarding/tour')}
-        />
+        {(!quizOpen || step === 'done') && (
+          <PrimaryButton
+            size="m"
+            text="Продолжить"
+            onClick={() => navigate('/onboarding/tour')}
+          />
+        )}
         <SkipLink onClick={handleSkip}>Пропустить настройку</SkipLink>
       </Actions>
     </Wrapper>

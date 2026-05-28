@@ -1,6 +1,19 @@
 import { useState } from 'react'
 import styled, { css } from 'styled-components'
 import { Button } from '@salutejs/plasma-web'
+
+const SecondaryButton = styled(Button)`
+  && {
+    background-color: #E5E7EB !important;
+    color: #2F3A4C !important;
+    * { color: #2F3A4C !important; }
+    &:hover {
+      background-color: #D1D5DB !important;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+      * { color: #2F3A4C !important; }
+    }
+  }
+`
 import { IconClose, IconDrag, IconSettingsOutline } from '@salutejs/plasma-icons'
 import { useNavigate, useOutletContext } from 'react-router-dom'
 import { useUserMode } from '../../context/UserModeContext'
@@ -272,8 +285,7 @@ function BasicView({ isEditMode, showToast }: ViewProps) {
               <BasicActionDesc>{activeTask.description}</BasicActionDesc>
             )}
           </div>
-          <Button
-            view="secondary"
+          <SecondaryButton
             size="m"
             text="Продолжить →"
             onClick={() => navigate(activeTask ? '/task' : '/main')}
@@ -308,8 +320,7 @@ function BasicView({ isEditMode, showToast }: ViewProps) {
         <BasicCard>
           <SecLabel>Нужно проверить</SecLabel>
           <BasicHintText>{hintText}</BasicHintText>
-          <Button
-            view="secondary"
+          <SecondaryButton
             size="s"
             text={hintAction}
             onClick={() => navigate(hintRoute)}

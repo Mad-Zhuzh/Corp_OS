@@ -1,6 +1,27 @@
 import { useEffect, useState, useRef } from 'react'
 import styled from 'styled-components'
 import { Button } from '@salutejs/plasma-web'
+
+const PrimaryButton = styled(Button)`
+  && {
+    background-color: #2F3A4C !important;
+    color: #FFFFFF !important;
+    &:hover { background-color: #1F2937 !important; }
+  }
+`
+
+const SecondaryButton = styled(Button)`
+  && {
+    background-color: #E5E7EB !important;
+    color: #2F3A4C !important;
+    * { color: #2F3A4C !important; }
+    &:hover {
+      background-color: #D1D5DB !important;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+      * { color: #2F3A4C !important; }
+    }
+  }
+`
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useUserMode } from '../../context/UserModeContext'
 import { useOpenObjects } from '../../context/OpenObjectsContext'
@@ -462,7 +483,7 @@ export function SearchScreen() {
                 <BasicResultTitle>{SEARCH_DOC.shortName}</BasicResultTitle>
                 <BasicResultMeta>PDF · Страница {SEARCH_DOC.page} · {SEARCH_DOC.section}</BasicResultMeta>
                 <BasicFragment>{SEARCH_DOC.fragment}</BasicFragment>
-                <Button view="primary" size="m" text={`Открыть на странице ${SEARCH_DOC.page}`} onClick={handleDocOpen} />
+                <PrimaryButton size="m" text={`Открыть на странице ${SEARCH_DOC.page}`} onClick={handleDocOpen} />
               </BasicResultBody>
             </BasicResultCard>
             <BasicNote>Мы нашли этот документ по смыслу вашего запроса</BasicNote>
@@ -483,7 +504,7 @@ export function SearchScreen() {
         {!anyResult && (
           <div>
             <div style={{ fontSize: '0.9375rem', fontWeight: 600, color: '#374151', marginBottom: '0.375rem' }}>
-              Ничего не нашлось. Попробуйте написать иначе:
+              Ничего не нашлось. Попробуйте написать иначе.
             </div>
             <SuggestionsRow>
               {BASIC_EMPTY_SUGGESTIONS.map(s => (
@@ -533,7 +554,7 @@ export function SearchScreen() {
               <StandardFragment>{SEARCH_DOC.fragment}</StandardFragment>
             </StandardResultBody>
             <StandardResultActions>
-              <Button view="secondary" size="s" text="Открыть" onClick={handleDocOpen} />
+              <SecondaryButton size="s" text="Открыть" onClick={handleDocOpen} />
             </StandardResultActions>
           </StandardResultRow>
         )}

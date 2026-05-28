@@ -1,6 +1,19 @@
 import { useState, useRef, useEffect } from 'react'
 import styled from 'styled-components'
 import { Button } from '@salutejs/plasma-web'
+
+const SecondaryButton = styled(Button)`
+  && {
+    background-color: #E5E7EB !important;
+    color: #2F3A4C !important;
+    * { color: #2F3A4C !important; }
+    &:hover {
+      background-color: #D1D5DB !important;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+      * { color: #2F3A4C !important; }
+    }
+  }
+`
 import { IconFolderOutline, IconDocumentOutline } from '@salutejs/plasma-icons'
 import { useUserMode } from '../../context/UserModeContext'
 import { useNavigate } from 'react-router-dom'
@@ -253,7 +266,7 @@ function BasicFiles() {
                   <BasicFileMeta>{file.date} · {file.owner} · {file.size}</BasicFileMeta>
                 </BasicFileInfo>
                 <BasicFileActions>
-                  <Button view="secondary" size="s" text="Открыть" onClick={() => navigate('/document')} />
+                  <SecondaryButton size="s" text="Открыть" onClick={() => navigate('/document')} />
                   <MoreWrap>
                     <MoreBtn
                       title="Ещё"
@@ -604,7 +617,7 @@ function StandardFiles() {
               <StdCell>{file.date}</StdCell>
               <StdCell>{file.owner}</StdCell>
               <StdActionsCell>
-                <Button view="secondary" size="s" text="Открыть" onClick={() => navigate('/document')} />
+                <SecondaryButton size="s" text="Открыть" onClick={() => navigate('/document')} />
                 <MoreWrap>
                   <MoreBtn
                     type="button"

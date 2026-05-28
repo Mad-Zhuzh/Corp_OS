@@ -1,6 +1,27 @@
 import { useState } from 'react'
 import styled from 'styled-components'
 import { Button } from '@salutejs/plasma-web'
+
+const PrimaryButton = styled(Button)`
+  && {
+    background-color: #2F3A4C !important;
+    color: #FFFFFF !important;
+    &:hover { background-color: #1F2937 !important; }
+  }
+`
+
+const SecondaryButton = styled(Button)`
+  && {
+    background-color: #E5E7EB !important;
+    color: #2F3A4C !important;
+    * { color: #2F3A4C !important; }
+    &:hover {
+      background-color: #D1D5DB !important;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+      * { color: #2F3A4C !important; }
+    }
+  }
+`
 import { IconFolderOutline, IconBlankDocOutline } from '@salutejs/plasma-icons'
 import {
   mockFiles,
@@ -413,9 +434,8 @@ export function FilePicker({ isOpen, onClose, onConfirm, mode }: FilePickerProps
               : 'Файлы не выбраны'}
           </FooterCount>
           <FooterBtns>
-            <Button view="secondary" size="m" text="Отмена" onClick={handleClose} />
-            <Button
-              view="primary"
+            <SecondaryButton size="m" text="Отмена" onClick={handleClose} />
+            <PrimaryButton
               size="m"
               text={selectedCount > 0 ? `Добавить файлы (${selectedCount})` : 'Добавить файлы'}
               disabled={selectedCount === 0}

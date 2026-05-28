@@ -3,7 +3,7 @@ import { Outlet, useNavigate, useLocation, useSearchParams } from 'react-router-
 import { SearchDropdown } from '../search/SearchDropdown'
 import { OpenObjectsProvider } from '../../context/OpenObjectsContext'
 import { OpenObjectsBar } from '../shared/OpenObjectsBar'
-import styled, { createGlobalStyle, css } from 'styled-components'
+import styled, { createGlobalStyle, css, keyframes } from 'styled-components'
 import { useUserMode, type UserMode } from '../../context/UserModeContext'
 import { useTourHighlight } from '../../context/TourHighlightContext'
 import type { FC } from 'react'
@@ -23,9 +23,10 @@ import {
   IconInfoCircleOutline,
   IconSearch,
   IconCardsGridOutline,
-  IconWifiDefault,
   IconMailOutline,
   IconProfileOutline,
+  IconObjectsSymbolsOutline,
+  IconPlanetOutline,
 } from '@salutejs/plasma-icons'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -116,6 +117,14 @@ const SEARCH_PH: Record<UserMode, string> = {
 
 const MODES: UserMode[] = ['basic', 'standard', 'expert']
 
+// ─── Keyframe animations ──────────────────────────────────────────────────────
+
+const searchGlow = keyframes`
+  0%, 100% { box-shadow: 0 0 0 2px rgba(99,102,241,0.18), 0 1px 2px rgba(0,0,0,0.06); border-color: rgba(99,102,241,0.35); }
+  50%       { box-shadow: 0 0 0 5px rgba(99,102,241,0.32), 0 0 14px rgba(99,102,241,0.16); border-color: rgba(99,102,241,0.60); }
+`
+
+
 // ─── Global styles ────────────────────────────────────────────────────────────
 
 const GlobalStyle = createGlobalStyle`
@@ -147,7 +156,7 @@ const HeaderEl = styled.header`
   height: ${HEADER_H}px;
   min-height: ${HEADER_H}px;
   background: #F0F2F5;
-  box-shadow: 0 1px 0 rgba(0,0,0,0.05);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.10), 0 1px 0 rgba(0,0,0,0.06);
   display: flex;
   align-items: center;
   padding: 0 1.5rem 0 1rem;
@@ -164,7 +173,7 @@ const HeaderSpacer = styled.div`
 const Logo = styled.div`
   font-size: 1.125rem;
   font-weight: 700;
-  color: #1a1a1a;
+  color: #2F3A4C;
   letter-spacing: -0.025em;
   white-space: nowrap;
   cursor: pointer;
@@ -173,24 +182,13 @@ const Logo = styled.div`
   padding: 0 0.25rem;
 `
 
-const SearchBox = styled.div<{ $highlighted?: boolean }>`
+const SearchBox = styled.div`
   width: 560px;
   flex-shrink: 0;
   position: relative;
-  ${({ $highlighted }) => $highlighted && css`
-    &::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: rgba(99, 102, 241, 0.15);
-      border-radius: 8px;
-      pointer-events: none;
-      z-index: 10;
-    }
-  `}
 `
 
-const SearchInputRow = styled.div`
+const SearchInputRow = styled.div<{ $pulsing?: boolean }>`
   display: flex;
   align-items: center;
   height: 34px;
@@ -203,6 +201,9 @@ const SearchInputRow = styled.div`
     border-color: rgba(99,102,241,0.4);
     box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
   }
+  ${({ $pulsing }) => $pulsing && css`
+    animation: ${searchGlow} 2s ease-in-out infinite;
+  `}
 `
 
 const SearchInput = styled.input`
@@ -255,7 +256,7 @@ const ModePill = styled.button<{ $open: boolean; $highlighted?: boolean }>`
   border: 1px solid transparent;
   border-radius: 8px;
   background: ${({ $open }) => ($open ? '#d1d5db' : '#e5e7eb')};
-  color: #1a1a1a;
+  color: #2F3A4C;
   font-size: 0.8125rem;
   font-weight: 500;
   cursor: pointer;
@@ -414,14 +415,14 @@ const ClockInner = styled.div`
 const ClockTime = styled.div`
   font-size: 0.9375rem;
   font-weight: 600;
-  color: #1a1a1a;
+  color: #2F3A4C;
   letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
 `
 
 const ClockDate = styled.div`
   font-size: 0.6875rem;
-  color: #6b7280;
+  color: #2F3A4C;
 `
 
 const CalPopover = styled.div`
@@ -517,7 +518,7 @@ const SidebarEl = styled.aside<{ $width: number; $highlighted?: boolean }>`
       content: '';
       position: absolute;
       inset: 0;
-      background: rgba(99, 102, 241, 0.14);
+      background: rgba(99, 102, 241, 0.18);
       pointer-events: none;
       z-index: 10;
     }
@@ -928,8 +929,8 @@ export function AppLayout() {
 
           <HeaderSpacer />
 
-          <SearchBox ref={searchBoxRef} $highlighted={zone === 'search'}>
-            <SearchInputRow>
+          <SearchBox ref={searchBoxRef}>
+            <SearchInputRow $pulsing={zone === 'search' && !searchOpen}>
               <SearchInput
                 placeholder={SEARCH_PH[mode]}
                 value={query}
@@ -999,7 +1000,7 @@ export function AppLayout() {
               onMouseLeave={() => setNetHover(false)}
             >
               <HdrIconBtn as="div" style={{ cursor: 'default' }}>
-                <IconWifiDefault size="xs" color="#6b7280" />
+                <IconPlanetOutline size="xs" color="#9ca3af" />
               </HdrIconBtn>
               {netHover && <TooltipBox>Подключено к сети</TooltipBox>}
             </TooltipWrap>
@@ -1007,8 +1008,8 @@ export function AppLayout() {
             {/* Mode switcher */}
             <ModeWrapper ref={modeRef}>
               <ModePill $open={modeOpen} $highlighted={zone === 'mode'} onClick={() => setModeOpen(v => !v)}>
-                <ModeDot $color={MODE_COLORS[mode]} />
-                {MODE_LABELS[mode]}
+                <IconObjectsSymbolsOutline size="xs" color="#6b7280" />
+                {mode !== 'expert' && MODE_LABELS[mode]}
                 <ModeChevron $open={modeOpen}>▾</ModeChevron>
               </ModePill>
               {modeOpen && (
