@@ -4,9 +4,9 @@ import { Button } from '@salutejs/plasma-web'
 
 const PrimaryButton = styled(Button)`
   && {
-    background-color: #2F3A4C !important;
+    background-color: #201e2b !important;
     color: #FFFFFF !important;
-    &:hover { background-color: #1F2937 !important; }
+    &:hover { background-color: #332f47 !important; }
   }
 `
 
@@ -191,7 +191,7 @@ const OptionBtn = styled.button<{ $selected: boolean }>`
   width: 100%;
   padding: 0.75rem 1rem;
   background: ${({ $selected }) => ($selected ? '#eef2ff' : '#ffffff')};
-  border: 1.5px solid ${({ $selected }) => ($selected ? '#6366f1' : '#e5e7eb')};
+  border: 1.5px solid ${({ $selected }) => ($selected ? '#6374f1' : '#e5e7eb')};
   border-radius: 10px;
   font-size: 0.875rem;
   color: ${({ $selected }) => ($selected ? '#3730a3' : '#374151')};
@@ -200,7 +200,7 @@ const OptionBtn = styled.button<{ $selected: boolean }>`
   cursor: pointer;
   transition: border-color 0.12s, background 0.12s;
   &:hover {
-    border-color: ${({ $selected }) => ($selected ? '#6366f1' : '#a5b4fc')};
+    border-color: ${({ $selected }) => ($selected ? '#6374f1' : '#a5b4fc')};
     background: ${({ $selected }) => ($selected ? '#eef2ff' : '#f8f9ff')};
   }
 `
@@ -209,8 +209,8 @@ const Radio = styled.span<{ $selected: boolean }>`
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  border: 2px solid ${({ $selected }) => ($selected ? '#6366f1' : '#d1d5db')};
-  background: ${({ $selected }) => ($selected ? '#6366f1' : 'transparent')};
+  border: 2px solid ${({ $selected }) => ($selected ? '#6374f1' : '#d1d5db')};
+  background: ${({ $selected }) => ($selected ? '#6374f1' : 'transparent')};
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -289,7 +289,7 @@ const CardsRow = styled.div`
 const ModeCard = styled.div<{ $active: boolean }>`
   position: relative;
   background: ${({ $active }) => ($active ? '#eef2ff' : '#ffffff')};
-  border: 2px solid ${({ $active }) => ($active ? '#6366f1' : '#e5e7eb')};
+  border: 2px solid ${({ $active }) => ($active ? '#6374f1' : '#e5e7eb')};
   border-radius: 16px;
   padding: 1.5rem;
   cursor: pointer;
@@ -298,7 +298,7 @@ const ModeCard = styled.div<{ $active: boolean }>`
     $active ? '0 0 0 4px rgba(99, 102, 241, 0.12)' : '0 1px 3px rgba(0,0,0,0.06)'};
 
   &:hover {
-    border-color: ${({ $active }) => ($active ? '#6366f1' : '#a5b4fc')};
+    border-color: ${({ $active }) => ($active ? '#6374f1' : '#a5b4fc')};
     box-shadow: ${({ $active }) =>
       $active
         ? '0 0 0 4px rgba(99, 102, 241, 0.12)'
@@ -340,7 +340,7 @@ const ActiveBadge = styled.div`
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: #6366f1;
+  background: #6374f1;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -390,7 +390,7 @@ const FeatureDot = styled.span<{ $active: boolean }>`
   height: 5px;
   border-radius: 50%;
   flex-shrink: 0;
-  background: ${({ $active }) => ($active ? '#6366f1' : '#d1d5db')};
+  background: ${({ $active }) => ($active ? '#6374f1' : '#d1d5db')};
 `
 
 // ─── Actions ──────────────────────────────────────────────────────────────────

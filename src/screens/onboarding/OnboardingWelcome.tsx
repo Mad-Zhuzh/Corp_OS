@@ -3,9 +3,9 @@ import { Button } from '@salutejs/plasma-web'
 
 const PrimaryButton = styled(Button)`
   && {
-    background-color: #2F3A4C !important;
+    background-color: #201e2b !important;
     color: #FFFFFF !important;
-    &:hover { background-color: #1F2937 !important; }
+    &:hover { background-color: #332f47 !important; }
   }
 `
 import { useNavigate } from 'react-router-dom'

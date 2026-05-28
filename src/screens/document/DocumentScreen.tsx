@@ -9,9 +9,9 @@ import {
 
 const PrimaryButton = styled(Button)`
   && {
-    background-color: #2F3A4C !important;
+    background-color: #201e2b !important;
     color: #FFFFFF !important;
-    &:hover { background-color: #1F2937 !important; }
+    &:hover { background-color: #332f47 !important; }
   }
 `
 
@@ -280,12 +280,20 @@ export function DocumentScreen() {
             onClick={() => showToast('Шаблон добавлен')}
           />
         )}
-        <SecondaryButton
-          size="m"
-          text="Скачать"
-          contentLeft={<IconDownload size="xs" color="currentColor" />}
-          onClick={() => showToast('Документ скачан')}
-        />
+        {isCompDoc
+          ? <PrimaryButton
+              size="m"
+              text="Скачать"
+              contentLeft={<IconDownload size="xs" color="currentColor" />}
+              onClick={() => showToast('Документ скачан')}
+            />
+          : <SecondaryButton
+              size="m"
+              text="Скачать"
+              contentLeft={<IconDownload size="xs" color="currentColor" />}
+              onClick={() => showToast('Документ скачан')}
+            />
+        }
         <TertiaryButton
           size="m"
           text="Закрыть"

@@ -12,21 +12,21 @@ import type { IconProps } from '@salutejs/plasma-icons'
 
 const PrimaryButton = styled(Button)`
   && {
-    background-color: #2F3A4C !important;
+    background-color: #201e2b !important;
     color: #FFFFFF !important;
-    &:hover { background-color: #1F2937 !important; }
+    &:hover { background-color: #332f47 !important; }
   }
 `
 
 const SecondaryButton = styled(Button)`
   && {
     background-color: #E5E7EB !important;
-    color: #2F3A4C !important;
-    * { color: #2F3A4C !important; }
+    color: #201e2b !important;
+    * { color: #201e2b !important; }
     &:hover {
       background-color: #D1D5DB !important;
       box-shadow: 0 1px 4px rgba(0,0,0,0.10);
-      * { color: #2F3A4C !important; }
+      * { color: #201e2b !important; }
     }
   }
 `

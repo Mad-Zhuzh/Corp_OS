@@ -2,15 +2,23 @@ import { useState } from 'react'
 import styled, { css } from 'styled-components'
 import { Button } from '@salutejs/plasma-web'
 
+const PrimaryButton = styled(Button)`
+  && {
+    background-color: #201e2b !important;
+    color: #FFFFFF !important;
+    &:hover { background-color: #332f47 !important; }
+  }
+`
+
 const SecondaryButton = styled(Button)`
   && {
     background-color: #E5E7EB !important;
-    color: #2F3A4C !important;
-    * { color: #2F3A4C !important; }
+    color: #201e2b !important;
+    * { color: #201e2b !important; }
     &:hover {
       background-color: #D1D5DB !important;
       box-shadow: 0 1px 4px rgba(0,0,0,0.10);
-      * { color: #2F3A4C !important; }
+      * { color: #201e2b !important; }
     }
   }
 `
@@ -67,7 +75,7 @@ const WidgetWrapEl = styled.div<{ $edit: boolean }>`
       content: '';
       position: absolute;
       inset: -3px;
-      border: 1.5px dashed #6366f1;
+      border: 1.5px dashed #6374f1;
       border-radius: 14px;
       pointer-events: none;
       z-index: 10;
@@ -93,7 +101,7 @@ const WidgetIconBtn = styled.button<{ $bare?: boolean }>`
   border: none;
   border-radius: 4px;
   background: ${({ $bare }) => ($bare ? 'transparent' : 'rgba(255, 255, 255, 0.92)')};
-  color: #6366f1;
+  color: #6374f1;
   cursor: pointer;
   padding: 0;
   transition: background 0.1s, color 0.1s;
@@ -219,6 +227,8 @@ const BasicTaskItem = styled.div`
   padding: 0.875rem 1.125rem;
   border-bottom: 1px solid ${c.borderLight};
   background: ${c.cardBg};
+  transition: background 0.12s;
+  &:hover { background: #edf3ff; }
   &:last-child { border-bottom: none; }
 `
 
@@ -273,7 +283,20 @@ function BasicView({ isEditMode, showToast }: ViewProps) {
     <BasicRoot>
       <BasicGreeting>Что важно сегодня</BasicGreeting>
 
-      {/* Widget 1: продолжите задачу */}
+      {/* Widget 1: нужно проверить */}
+      <WidgetWrap edit={isEditMode} toast={showToast}>
+        <BasicCard>
+          <SecLabel>Нужно проверить</SecLabel>
+          <BasicHintText>{hintText}</BasicHintText>
+          <PrimaryButton
+            size="m"
+            text={hintAction}
+            onClick={() => navigate(hintRoute)}
+          />
+        </BasicCard>
+      </WidgetWrap>
+
+      {/* Widget 2: продолжите задачу */}
       <WidgetWrap edit={isEditMode} toast={showToast}>
         <BasicCard>
           <SecLabel>Продолжите задачу</SecLabel>
@@ -293,7 +316,7 @@ function BasicView({ isEditMode, showToast }: ViewProps) {
         </BasicCard>
       </WidgetWrap>
 
-      {/* Widget 2: в работе */}
+      {/* Widget 3: в работе */}
       <WidgetWrap edit={isEditMode} toast={showToast}>
         <BasicCard>
           <SecLabel>В работе</SecLabel>
@@ -312,19 +335,6 @@ function BasicView({ isEditMode, showToast }: ViewProps) {
               )
             })}
           </BasicTaskBlock>
-        </BasicCard>
-      </WidgetWrap>
-
-      {/* Widget 3: нужно проверить */}
-      <WidgetWrap edit={isEditMode} toast={showToast}>
-        <BasicCard>
-          <SecLabel>Нужно проверить</SecLabel>
-          <BasicHintText>{hintText}</BasicHintText>
-          <SecondaryButton
-            size="s"
-            text={hintAction}
-            onClick={() => navigate(hintRoute)}
-          />
         </BasicCard>
       </WidgetWrap>
     </BasicRoot>
@@ -419,7 +429,7 @@ const StdTaskRow = styled.div`
   border-bottom: 1px solid ${c.borderLight};
   cursor: pointer;
   transition: background 0.12s;
-  &:hover { background: #dde4ff; }
+  &:hover { background: #edf3ff; }
   &:last-child { border-bottom: none; }
 `
 
@@ -473,8 +483,8 @@ const StdDocCard = styled.div`
   padding: 0.75rem 0.875rem;
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  transition: box-shadow 200ms ease;
-  &:hover { box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06); }
+  transition: background 0.12s, box-shadow 200ms ease;
+  &:hover { background: #edf3ff; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06); }
 `
 
 const StdDocLabel = styled.div`
@@ -502,8 +512,8 @@ const StdNotifItem = styled.div<{ $unread: boolean }>`
   padding: 0.75rem 1rem;
   border-bottom: 1px solid ${c.borderLight};
   background: ${c.cardBg};
-  transition: background 0.1s;
-  &:hover { background: #f8f9fa; }
+  transition: background 0.12s;
+  &:hover { background: #edf3ff; }
   &:last-child { border-bottom: none; }
 `
 
@@ -798,7 +808,7 @@ const ExpertWorkRow = styled.div`
   border-radius: 4px;
   cursor: default;
   transition: background 0.12s;
-  &:hover { background: #dde4ff; }
+  &:hover { background: #edf3ff; }
 `
 
 const ExpertWorkTitle = styled.span`
@@ -859,7 +869,7 @@ const ExpertMailRow = styled.div`
   border-radius: 4px;
   cursor: default;
   transition: background 0.12s;
-  &:hover { background: #dde4ff; }
+  &:hover { background: #edf3ff; }
 `
 
 const ExpertMailDot = styled.span<{ $unread: boolean }>`
@@ -911,6 +921,14 @@ const ExpertRightItem = styled.div`
   color: ${c.textSec};
   line-height: 1.5;
   padding: 0.2rem 0;
+`
+
+const ExpertRightItemNew = styled(ExpertRightItem)`
+  font-weight: 600;
+  color: ${c.text};
+  border-left: 2px solid ${c.accent};
+  padding-left: 0.5rem;
+  margin-left: -0.5rem;
 `
 
 const ExpertMeetingTime = styled.span`
@@ -1056,6 +1074,7 @@ function ExpertView({ isEditMode, showToast }: ViewProps) {
           <ExpertCard>
             <ExpertBlockLabel>На согласовании</ExpertBlockLabel>
             <ExpertRightList>
+              <ExpertRightItemNew>Заявка #1043</ExpertRightItemNew>
               <ExpertRightItem>Заявка #1041</ExpertRightItem>
               <ExpertRightItem>Договор с подрядчиком</ExpertRightItem>
               <ExpertRightItem>Командировка в Москву</ExpertRightItem>

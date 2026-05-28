@@ -104,7 +104,7 @@ const MODE_LABELS: Record<UserMode, string> = {
 }
 
 const MODE_COLORS: Record<UserMode, string> = {
-  basic:    '#6366f1',
+  basic:    '#6374f1',
   standard: '#3b82f6',
   expert:   '#8b5cf6',
 }
@@ -173,7 +173,7 @@ const HeaderSpacer = styled.div`
 const Logo = styled.div`
   font-size: 1.125rem;
   font-weight: 700;
-  color: #2F3A4C;
+  color: #201e2b;
   letter-spacing: -0.025em;
   white-space: nowrap;
   cursor: pointer;
@@ -232,7 +232,7 @@ const SearchIconBtn = styled.button`
   border-radius: 0 7px 7px 0;
   flex-shrink: 0;
   transition: color 0.15s, background 0.15s;
-  &:hover { color: #6366f1; background: rgba(99,102,241,0.06); }
+  &:hover { color: #6374f1; background: rgba(99,102,241,0.06); }
 `
 
 const HeaderRight = styled.div`
@@ -256,7 +256,7 @@ const ModePill = styled.button<{ $open: boolean; $highlighted?: boolean }>`
   border: 1px solid transparent;
   border-radius: 8px;
   background: ${({ $open }) => ($open ? '#d1d5db' : '#e5e7eb')};
-  color: #2F3A4C;
+  color: #201e2b;
   font-size: 0.8125rem;
   font-weight: 500;
   cursor: pointer;
@@ -415,14 +415,14 @@ const ClockInner = styled.div`
 const ClockTime = styled.div`
   font-size: 0.9375rem;
   font-weight: 600;
-  color: #2F3A4C;
+  color: #201e2b;
   letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
 `
 
 const ClockDate = styled.div`
   font-size: 0.6875rem;
-  color: #2F3A4C;
+  color: #201e2b;
 `
 
 const CalPopover = styled.div`
@@ -839,6 +839,14 @@ export function AppLayout() {
   useEffect(() => {
     setSearchOpen(false)
   }, [location.pathname])
+
+  // sync input field from URL when on /search (e.g. after chip click)
+  useEffect(() => {
+    if (location.pathname === '/search') {
+      const q = searchParams.get('q')
+      if (q !== null) setQuery(q)
+    }
+  }, [location.pathname, searchParams])
 
   // close edit menu on outside click
   useEffect(() => {

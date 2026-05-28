@@ -1,6 +1,15 @@
 import { useState, useEffect, useRef } from 'react'
 import styled from 'styled-components'
+import { Button } from '@salutejs/plasma-web'
 import { useNavigate } from 'react-router-dom'
+
+const PrimaryButton = styled(Button)`
+  && {
+    background-color: #2F3A4C !important;
+    color: #FFFFFF !important;
+    &:hover { background-color: #332f47 !important; }
+  }
+`
 import { useUserMode } from '../../context/UserModeContext'
 import {
   SEARCH_DOC,
@@ -52,7 +61,7 @@ const DDLabel = styled.div`
 
 const DDHint = styled.div`
   font-size: 0.8125rem;
-  color: #6b7280;
+  color: #444444;
   padding: 0.5rem 0.875rem 0.25rem;
   font-style: italic;
 `
@@ -110,7 +119,7 @@ const DDAllResultsBtn = styled.button<{ $active?: boolean }>`
   border-top: 1px solid #e2e8f0;
   text-align: left;
   font-size: 0.8125rem;
-  color: #6366f1;
+  color: #6374f1;
   font-weight: 500;
   cursor: pointer;
   font-family: inherit;
@@ -162,19 +171,6 @@ const DDBasicCardMeta = styled.div`
   margin-bottom: 0.625rem;
 `
 
-const DDBasicCardBtn = styled.button`
-  background: #4f46e5;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 0.3rem 0.75rem;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  cursor: pointer;
-  font-family: inherit;
-  transition: background 0.1s;
-  &:hover { background: #4338ca; }
-`
 
 // ─── Standard: compact row ────────────────────────────────────────────────────
 
@@ -403,7 +399,7 @@ export function SearchDropdown({
               <DDBasicCardBody>
                 <DDBasicCardTitle>{SEARCH_DOC.shortName}</DDBasicCardTitle>
                 <DDBasicCardMeta>Документ · страница {SEARCH_DOC.page}</DDBasicCardMeta>
-                <DDBasicCardBtn onClick={onDocOpen}>Открыть нужное место</DDBasicCardBtn>
+                <PrimaryButton size="s" text="Открыть нужное место" onClick={onDocOpen} />
               </DDBasicCardBody>
             </DDBasicCard>
           </>

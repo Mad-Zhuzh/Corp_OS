@@ -4,21 +4,21 @@ import { Button } from '@salutejs/plasma-web'
 
 const PrimaryButton = styled(Button)`
   && {
-    background-color: #2F3A4C !important;
+    background-color: #201e2b !important;
     color: #FFFFFF !important;
-    &:hover { background-color: #1F2937 !important; }
+    &:hover { background-color: #332f47 !important; }
   }
 `
 
 const SecondaryButton = styled(Button)`
   && {
     background-color: #E5E7EB !important;
-    color: #2F3A4C !important;
-    * { color: #2F3A4C !important; }
+    color: #201e2b !important;
+    * { color: #201e2b !important; }
     &:hover {
       background-color: #D1D5DB !important;
       box-shadow: 0 1px 4px rgba(0,0,0,0.10);
-      * { color: #2F3A4C !important; }
+      * { color: #201e2b !important; }
     }
   }
 `
@@ -82,7 +82,7 @@ const c = {
   text:          '#1a1a1a',
   textSec:       '#4b5563',
   textTer:       '#9ca3af',
-  accent:        '#6366f1',
+  accent:        '#6374f1',
   accentDark:    '#4338ca',
   accentBg:      '#eef2ff',
   accentBorder:  '#c7d2fe',
@@ -652,7 +652,6 @@ const SuccessScreenWrap = styled.div`
 `
 const SuccessScreenTitle = styled.div`font-size: 1.5rem; font-weight: 700; color: ${c.ok};`
 const SuccessScreenText  = styled.div`font-size: 0.9375rem; color: ${c.textSec}; line-height: 1.55; margin-bottom: 0.5rem;`
-const SuccessScreenNote  = styled.div`font-size: 0.875rem; color: ${c.textTer};`
 
 // ─── Basic entry: choose method ───────────────────────────────────────────────
 
@@ -717,7 +716,7 @@ function BasicFolderFlow({ initialFiles, onReset }: BasicFolderFlowProps) {
           <IconDoneCircleOutline size="m" color="#059669" />
           <SuccessScreenTitle>Заявка отправлена</SuccessScreenTitle>
           <SuccessScreenText>
-            Ваша заявка передана в отдел закупок. Мы уведомим вас о результате.
+            Ваша заявка передана в отдел закупок.<br /> Мы уведомим вас о результате.
           </SuccessScreenText>
           <ActRow style={{ marginTop: '0.5rem' }}>
             <PrimaryButton size="m" text="Создать ещё одну заявку" onClick={onReset} />
@@ -826,7 +825,7 @@ function BasicFolderFlow({ initialFiles, onReset }: BasicFolderFlowProps) {
             <FlDataRow><FlDataKey>Срок</FlDataKey><FlDataVal>{deadline}</FlDataVal></FlDataRow>
             <FlDataRow><FlDataKey>Приоритет</FlDataKey><FlDataVal>{priority}</FlDataVal></FlDataRow>
             {comment && <FlDataRow><FlDataKey>Комментарий</FlDataKey><FlDataVal>{comment}</FlDataVal></FlDataRow>}
-            <FlDataRow><FlDataKey>Файлы</FlDataKey><FlDataVal>{attachedFiles.length} из {attachedFiles.length} ✓</FlDataVal></FlDataRow>
+            <FlDataRow><FlDataKey>Файлы</FlDataKey><FlDataVal>{attachedFiles.length} прикреплённых файла ✓</FlDataVal></FlDataRow>
           </FlDataCard>
           <ActRow>
             <PrimaryButton size="m" text="Отправить заявку" onClick={() => setDone(true)} />
@@ -858,7 +857,7 @@ function BasicManualFlow({ onReset }: { onReset: () => void }) {
           <IconDoneCircleOutline size="m" color="#059669" />
           <SuccessScreenTitle>Заявка отправлена</SuccessScreenTitle>
           <SuccessScreenText>
-            Ваша заявка передана в отдел закупок. Мы уведомим вас о результате.
+            Ваша заявка передана в отдел закупок.<br /> Мы уведомим вас о результате.
           </SuccessScreenText>
           <ActRow style={{ marginTop: '0.5rem' }}>
             <PrimaryButton size="m" text="Создать ещё одну заявку" onClick={onReset} />
@@ -998,11 +997,9 @@ function StandardFolderFlow({ initialFiles }: StandardFolderFlowProps) {
       <SuccessScreenWrap>
         <IconDoneCircleOutline size="m" color="#059669" />
         <SuccessScreenTitle>Заявка отправлена</SuccessScreenTitle>
-        {hasFiles && (
-          <SuccessScreenNote>
-            Найдено {attachedFiles.length} из {attachedFiles.length} файлов · Автозаполнено {autoFields.length} поля
-          </SuccessScreenNote>
-        )}
+        <SuccessScreenText>
+          Ваша заявка передана в отдел закупок.<br /> Мы уведомим вас о результате.
+        </SuccessScreenText>
         <ActRow style={{ marginTop: '1rem' }}>
           <PrimaryButton size="m" text="Создать ещё" onClick={() => { setDone(false); setPreview(false); setAttachedFiles([]); setEditVals(emptyVals); setDeadline(''); setComment('') }} />
           <SecondaryButton size="m" text="На главную" onClick={() => navigate('/main')} />
@@ -1022,7 +1019,7 @@ function StandardFolderFlow({ initialFiles }: StandardFolderFlowProps) {
           <FlDataRow><FlDataKey>Срок</FlDataKey><FlDataVal>{deadline}</FlDataVal></FlDataRow>
           <FlDataRow><FlDataKey>Приоритет</FlDataKey><FlDataVal>{priority}</FlDataVal></FlDataRow>
           {comment && <FlDataRow><FlDataKey>Комментарий</FlDataKey><FlDataVal>{comment}</FlDataVal></FlDataRow>}
-          <FlDataRow><FlDataKey>Файлы</FlDataKey><FlDataVal>{attachedFiles.length}</FlDataVal></FlDataRow>
+          <FlDataRow><FlDataKey>Файлы</FlDataKey><FlDataVal>{attachedFiles.length} прикреплённых файла ✓</FlDataVal></FlDataRow>
         </FlDataCard>
         <ActRow>
           <SecondaryButton size="m" text="← Назад" onClick={() => setPreview(false)} />
@@ -1225,7 +1222,7 @@ function ExpertFolderFlow() {
         <Button view="clear" size="s" text="Отмена" onClick={() => navigate('/documents')} />
       </ExpFlBtnRow>
       {!hasRequired && (
-        <div style={{ fontSize: '0.75rem', color: c.textTer, marginTop: '0.375rem' }}>
+        <div style={{ fontSize: '0.75rem', color: '#2F3A4C', marginTop: '0.375rem' }}>
           Укажите срок исполнения, чтобы отправить заявку
         </div>
       )}
@@ -1341,12 +1338,12 @@ export function TaskScreen() {
         <PageSubtitle>Выберите, как вы хотите начать</PageSubtitle>
         <MethodGrid>
           <MethodCard onClick={() => setRootEntry('files')}>
-            <MethodIcon><IconFolderOutline size="s" color="#6366f1" /></MethodIcon>
+            <MethodIcon><IconFolderOutline size="s" color="#6374f1" /></MethodIcon>
             <MethodTitle>Из файлов</MethodTitle>
             <MethodDesc>Выберите документы — данные заполнятся автоматически</MethodDesc>
           </MethodCard>
           <MethodCard onClick={() => setRootEntry('manual')}>
-            <MethodIcon><IconEditOutline size="s" color="#6366f1" /></MethodIcon>
+            <MethodIcon><IconEditOutline size="s" color="#6374f1" /></MethodIcon>
             <MethodTitle>Заполнить вручную</MethodTitle>
             <MethodDesc>Введите все данные самостоятельно шаг за шагом</MethodDesc>
           </MethodCard>

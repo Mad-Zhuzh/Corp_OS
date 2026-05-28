@@ -4,21 +4,21 @@ import { Button } from '@salutejs/plasma-web'
 
 const PrimaryButton = styled(Button)`
   && {
-    background-color: #2F3A4C !important;
+    background-color: #201e2b !important;
     color: #FFFFFF !important;
-    &:hover { background-color: #1F2937 !important; }
+    &:hover { background-color: #332f47 !important; }
   }
 `
 
 const SecondaryButton = styled(Button)`
   && {
     background-color: #E5E7EB !important;
-    color: #2F3A4C !important;
-    * { color: #2F3A4C !important; }
+    color: #201e2b !important;
+    * { color: #201e2b !important; }
     &:hover {
       background-color: #D1D5DB !important;
       box-shadow: 0 1px 4px rgba(0,0,0,0.10);
-      * { color: #2F3A4C !important; }
+      * { color: #201e2b !important; }
     }
   }
 `
@@ -61,7 +61,7 @@ const PageTitle = styled.h1`
   font-weight: 700;
   color: ${c.text};
   letter-spacing: -0.02em;
-  margin-bottom: 0.375rem;
+  margin-bottom: 0.875rem;
 `
 
 const PageSubtitle = styled.p`
@@ -315,7 +315,7 @@ const StandardResultMeta = styled.div`
 
 const StandardFragment = styled.div`
   font-size: 0.8125rem;
-  color: ${c.textTer};
+  color: ${c.textSec};
   font-style: italic;
   line-height: 1.5;
 `
@@ -337,7 +337,7 @@ const ExpertWrapper = styled.div`
 
 const ExpertMeta = styled.div`
   font-size: 0.8125rem;
-  color: ${c.textTer};
+  color: ${c.textSec};
   font-family: 'SF Mono', Consolas, 'Courier New', monospace;
   margin-bottom: 1.25rem;
 `
@@ -530,20 +530,22 @@ export function SearchScreen() {
     ]
     return (
       <StandardWrapper>
-        <PageTitle>Результаты поиска</PageTitle>
+        <PageTitle style={{ marginBottom: '1.25rem' }}>Результаты поиска</PageTitle>
         <PageSubtitle>
           {total > 0
             ? `Найдено ${total} ${total === 1 ? 'результат' : 'результата'} по запросу «${query}»`
             : `По запросу «${query}» ничего не найдено`}
         </PageSubtitle>
 
-        <FiltersRow>
-          {FILTERS.map(f => (
-            <FilterChip key={f.key} $active={f.key === 'all'} onClick={() => {}}>
-              {f.label}
-            </FilterChip>
-          ))}
-        </FiltersRow>
+        {total > 0 && (
+          <FiltersRow>
+            {FILTERS.map(f => (
+              <FilterChip key={f.key} $active={f.key === 'all'} onClick={() => {}}>
+                {f.label}
+              </FilterChip>
+            ))}
+          </FiltersRow>
+        )}
 
         {matched && (
           <StandardResultRow style={{ marginBottom: '0.5rem' }}>
@@ -568,8 +570,8 @@ export function SearchScreen() {
         )}
 
         {total === 0 && (
-          <div style={{ fontSize: '0.9375rem', color: c.textSec }}>
-            По запросу ничего не найдено
+          <div style={{ fontSize: '0.875rem', color: c.textSec }}>
+            Попробуйте изменить запрос или проверить написание.
           </div>
         )}
       </StandardWrapper>
@@ -636,8 +638,23 @@ export function SearchScreen() {
       })}
 
       {total === 0 && (
-        <div style={{ fontSize: '0.8125rem', color: c.textTer, fontFamily: 'SF Mono, Consolas, monospace' }}>
-          Не найдено. Попробуйте тип:pdf [запрос]
+        <div style={{ fontSize: '0.8125rem', color: c.textSec }}>
+          Уточните:  {' '}
+          <button
+            onClick={() => navigate(`/search?q=${encodeURIComponent(`тип:pdf ${query}`)}`)}
+            style={{
+              background: c.accentBg,
+              border: `1px solid ${c.accentBorder}`,
+              borderRadius: '12px',
+              padding: '0.1rem 0.5rem',
+              fontSize: '0.8125rem',
+              color: c.accentDark,
+              fontFamily: 'SF Mono, Consolas, monospace',
+              cursor: 'pointer',
+            }}
+          >
+            тип:pdf {query}
+          </button>
         </div>
       )}
 

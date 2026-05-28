@@ -5,12 +5,12 @@ import { Button } from '@salutejs/plasma-web'
 const SecondaryButton = styled(Button)`
   && {
     background-color: #E5E7EB !important;
-    color: #2F3A4C !important;
-    * { color: #2F3A4C !important; }
+    color: #201e2b !important;
+    * { color: #201e2b !important; }
     &:hover {
       background-color: #D1D5DB !important;
       box-shadow: 0 1px 4px rgba(0,0,0,0.10);
-      * { color: #2F3A4C !important; }
+      * { color: #201e2b !important; }
     }
   }
 `
@@ -147,7 +147,7 @@ const FilterRow = styled.div`
 const FilterTab = styled.button<{ $active: boolean }>`
   padding: 0.25rem 0.75rem;
   border-radius: 20px;
-  border: 1px solid ${({ $active }) => ($active ? '#6366f1' : '#e2e8f0')};
+  border: 1px solid ${({ $active }) => ($active ? '#6374f1' : '#e2e8f0')};
   background: ${({ $active }) => ($active ? '#eef2ff' : '#ffffff')};
   color: ${({ $active }) => ($active ? '#4f46e5' : '#6b7280')};
   font-size: 0.8125rem;
@@ -210,7 +210,7 @@ function BasicFiles() {
                     $active={selectedFolder?.id === root.id}
                     onClick={() => handleFolderClick(root)}
                   >
-                    <IconFolderOutline size="xs" color={selectedFolder?.id === root.id ? '#6366f1' : '#6366f1'} />
+                    <IconFolderOutline size="xs" color={selectedFolder?.id === root.id ? '#6374f1' : '#6374f1'} />
                     {root.label}
                   </BasicFolderTreeRoot>
                   {getChildren(root.id).map(sub => (
@@ -219,7 +219,7 @@ function BasicFiles() {
                       $active={selectedFolder?.id === sub.id}
                       onClick={() => handleFolderClick(sub)}
                     >
-                      <IconFolderOutline size="xs" color={selectedFolder?.id === sub.id ? '#6366f1' : '#9ca3af'} />
+                      <IconFolderOutline size="xs" color={selectedFolder?.id === sub.id ? '#6374f1' : '#9ca3af'} />
                       {sub.label}
                     </BasicFolderTreeSub>
                   ))}
@@ -235,7 +235,7 @@ function BasicFiles() {
                   onClick={() => handleFolderClick(f)}
                 >
                   <BasicFolderCardIcon>
-                    <IconFolderOutline size="m" color={selectedFolder?.id === f.id ? '#4338ca' : '#6366f1'} />
+                    <IconFolderOutline size="m" color={selectedFolder?.id === f.id ? '#4338ca' : '#6374f1'} />
                   </BasicFolderCardIcon>
                   <BasicFolderCardTitle>{f.label}</BasicFolderCardTitle>
                   <BasicFolderCardDesc>{f.description}</BasicFolderCardDesc>
@@ -343,7 +343,7 @@ const BasicSectionTitle = styled.div`
 const BasicAllFoldersLink = styled.button`
   font-size: 0.875rem;
   font-weight: 500;
-  color: #6366f1;
+  color: #6374f1;
   background: none;
   border: none;
   cursor: pointer;
@@ -360,7 +360,7 @@ const BasicFolderGrid = styled.div`
 
 const BasicFolderCard = styled.div<{ $active?: boolean }>`
   background: ${({ $active }) => ($active ? '#eef2ff' : '#ffffff')};
-  border: 2px solid ${({ $active }) => ($active ? '#6366f1' : '#e5e7eb')};
+  border: 2px solid ${({ $active }) => ($active ? '#6374f1' : '#e5e7eb')};
   border-radius: 14px;
   padding: 1.25rem 1.5rem;
   cursor: pointer;
@@ -1181,7 +1181,7 @@ const ExpSep = styled.div`
 const ExpFilterBtn = styled.button<{ $active: boolean }>`
   padding: 0.2rem 0.55rem;
   border-radius: 4px;
-  border: 1px solid ${({ $active }) => ($active ? '#6366f1' : '#e2e8f0')};
+  border: 1px solid ${({ $active }) => ($active ? '#6374f1' : '#e2e8f0')};
   background: ${({ $active }) => ($active ? '#eef2ff' : 'transparent')};
   color: ${({ $active }) => ($active ? '#4f46e5' : '#6b7280')};
   font-size: 0.6875rem;
@@ -1307,8 +1307,8 @@ const ExpCheckBox = styled.div<{ $checked: boolean }>`
   width: 16px;
   height: 16px;
   border-radius: 3px;
-  border: 2px solid ${({ $checked }) => ($checked ? '#6366f1' : '#d1d5db')};
-  background: ${({ $checked }) => ($checked ? '#6366f1' : 'transparent')};
+  border: 2px solid ${({ $checked }) => ($checked ? '#6374f1' : '#d1d5db')};
+  background: ${({ $checked }) => ($checked ? '#6374f1' : 'transparent')};
   color: white;
   font-size: 0.625rem;
   font-weight: 700;

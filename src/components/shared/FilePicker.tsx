@@ -4,21 +4,21 @@ import { Button } from '@salutejs/plasma-web'
 
 const PrimaryButton = styled(Button)`
   && {
-    background-color: #2F3A4C !important;
+    background-color: #201e2b !important;
     color: #FFFFFF !important;
-    &:hover { background-color: #1F2937 !important; }
+    &:hover { background-color: #332f47 !important; }
   }
 `
 
 const SecondaryButton = styled(Button)`
   && {
     background-color: #E5E7EB !important;
-    color: #2F3A4C !important;
-    * { color: #2F3A4C !important; }
+    color: #201e2b !important;
+    * { color: #201e2b !important; }
     &:hover {
       background-color: #D1D5DB !important;
       box-shadow: 0 1px 4px rgba(0,0,0,0.10);
-      * { color: #2F3A4C !important; }
+      * { color: #201e2b !important; }
     }
   }
 `
@@ -40,7 +40,7 @@ const c = {
   text:         '#1a1a1a',
   textSec:      '#4b5563',
   textTer:      '#9ca3af',
-  accent:       '#6366f1',
+  accent:       '#6374f1',
   accentDark:   '#4338ca',
   accentBg:     '#eef2ff',
   accentBorder: '#c7d2fe',
@@ -378,7 +378,7 @@ export function FilePicker({ isOpen, onClose, onConfirm, mode }: FilePickerProps
                 onClick={() => setActiveFolderId(folder.id)}
               >
                 <FolderIcon>
-                  <IconFolderOutline size="xs" color={activeFolderId === folder.id ? '#6366f1' : '#9ca3af'} />
+                  <IconFolderOutline size="xs" color={activeFolderId === folder.id ? '#6374f1' : '#9ca3af'} />
                 </FolderIcon>
                 {folder.label}
               </TreeItem>
