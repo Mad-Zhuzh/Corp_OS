@@ -82,7 +82,7 @@ interface CrumbDef { section: string; sub?: string; sectionRoute?: string }
 const CRUMBS: Record<string, CrumbDef> = {
   '/main':           { section: 'Рабочая среда' },
   '/search':         { section: 'Поиск' },
-  '/task':           { section: 'Заявки', sub: 'Новая заявка' },
+  '/task':           { section: 'Заявки', sub: 'Новая заявка', sectionRoute: '/task' },
   '/tasks':          { section: 'Задачи' },
   '/documents':      { section: 'Файлы и документы' },
   '/projects':       { section: 'Проекты' },
