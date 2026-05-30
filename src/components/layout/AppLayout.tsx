@@ -28,6 +28,7 @@ import {
   IconProfileOutline,
   IconObjectsSymbolsOutline,
   IconPlanetOutline,
+  IconClose,
 } from '@salutejs/plasma-icons'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -105,7 +106,7 @@ const MODE_LABELS: Record<UserMode, string> = {
 }
 
 const MODE_COLORS: Record<UserMode, string> = {
-  basic:    '#6374f1',
+  basic:    '#4f46e5',
   standard: '#3b82f6',
   expert:   '#8b5cf6',
 }
@@ -233,7 +234,23 @@ const SearchIconBtn = styled.button`
   border-radius: 0 7px 7px 0;
   flex-shrink: 0;
   transition: color 0.15s, background 0.15s;
-  &:hover { color: #6374f1; background: rgba(99,102,241,0.06); }
+  &:hover { color: #4f46e5; background: rgba(99,102,241,0.06); }
+`
+
+const SearchClearBtn = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  background: transparent;
+  color: #9ca3af;
+  cursor: pointer;
+  border-radius: 6px;
+  flex-shrink: 0;
+  transition: color 0.15s, background 0.15s;
+  &:hover { color: #6b7280; background: rgba(0,0,0,0.05); }
 `
 
 const HeaderRight = styled.div`
@@ -621,7 +638,9 @@ const ContentArea = styled.div<{ $highlighted?: boolean; $editMode?: boolean }>`
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: ${({ $editMode }) => ($editMode ? '#c8cdd8' : 'linear-gradient(180deg, #F6F8FB 0%, #EEF2F7 100%)')};
+  background: ${({ $editMode }) => ($editMode
+    ? 'repeating-linear-gradient(45deg, #edeff5, #edeff5 10px, #e6e9f2 10px, #e6e9f2 20px)'
+    : 'linear-gradient(180deg, #F6F8FB 0%, #EEF2F7 100%)')};
   transition: background 0.2s;
   min-width: 0;
   position: relative;
@@ -735,6 +754,37 @@ const ContentInner = styled.div`
   margin: 0 auto;
 `
 
+// ─── Edit-mode banner ─────────────────────────────────────────────────────────
+
+const EditModeBanner = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1.5rem;
+  background: #eef2ff;
+  border-bottom: 1px solid #c7d2fe;
+  color: #4338ca;
+  font-size: 0.8125rem;
+  flex-shrink: 0;
+`
+
+const EditModeBannerText = styled.span`
+  flex: 1;
+`
+
+const EditModeDoneBtn = styled.button`
+  border: 1px solid #c7d2fe;
+  background: #ffffff;
+  color: #4338ca;
+  font-size: 0.8125rem;
+  font-family: inherit;
+  border-radius: 6px;
+  padding: 0.2rem 0.75rem;
+  cursor: pointer;
+  transition: background 0.1s;
+  &:hover { background: #f5f3ff; }
+`
+
 // ─── Toast ────────────────────────────────────────────────────────────────────
 
 const AppToast = styled.div<{ $visible: boolean }>`
@@ -767,6 +817,7 @@ export function AppLayout() {
   const [searchOpen, setSearchOpen] = useState(false)
   const [modeOpen, setModeOpen] = useState(false)
   const [collapsed, setCollapsed] = useState(mode === 'expert')
+  const sidebarToggledRef = useRef(false)
   const modeRef = useRef<HTMLDivElement>(null)
   const searchBoxRef = useRef<HTMLDivElement>(null)
   const [toastMsg, setToastMsg] = useState('')
@@ -807,9 +858,9 @@ export function AppLayout() {
     }
   }, [location.key])
 
-  // auto-adjust sidebar when mode changes
+  // auto-adjust sidebar default per mode, но только пока пользователь не менял его вручную
   useEffect(() => {
-    setCollapsed(mode === 'expert')
+    if (!sidebarToggledRef.current) setCollapsed(mode === 'expert')
   }, [mode])
 
   // close mode dropdown on outside click
@@ -947,6 +998,16 @@ export function AppLayout() {
                 onFocus={() => setSearchOpen(true)}
                 onKeyDown={handleSearchKeyDown}
               />
+              {query && (
+                <SearchClearBtn
+                  onMouseDown={e => e.preventDefault()}
+                  onClick={() => { setQuery(''); setSearchOpen(true) }}
+                  title="Очистить"
+                  tabIndex={-1}
+                >
+                  <IconClose size="xs" color="currentColor" />
+                </SearchClearBtn>
+              )}
               <SearchIconBtn
                 onClick={handleNavigateToResults}
                 title="Найти"
@@ -1068,7 +1129,7 @@ export function AppLayout() {
           <SidebarEl $width={sidebarWidth} $highlighted={zone === 'sidebar'}>
             <CollapseBtn
               $collapsed={collapsed}
-              onClick={() => setCollapsed(c => !c)}
+              onClick={() => { sidebarToggledRef.current = true; setCollapsed(c => !c) }}
               title={collapsed ? 'Развернуть панель' : 'Свернуть панель'}
             >
               {collapsed
@@ -1134,10 +1195,14 @@ export function AppLayout() {
                       </EditBtn>
                       {editMenuOpen && (
                         <EditMenu>
-                          <EditMenuItem>Добавить виджет</EditMenuItem>
-                          <EditMenuItem>Персонализация</EditMenuItem>
-                          <EditMenuItem>Сбросить расположение</EditMenuItem>
-                          <EditMenuItem>Настройки интерфейса</EditMenuItem>
+                          {['Добавить виджет', 'Персонализация', 'Сбросить расположение', 'Настройки интерфейса'].map(label => (
+                            <EditMenuItem
+                              key={label}
+                              onClick={() => { showToast('Недоступно в демо-режиме'); setEditMenuOpen(false) }}
+                            >
+                              {label}
+                            </EditMenuItem>
+                          ))}
                         </EditMenu>
                       )}
                     </EditBtnWrap>
@@ -1147,6 +1212,14 @@ export function AppLayout() {
             )}
 
             <OpenObjectsBar />
+
+            {isEditMode && (
+              <EditModeBanner>
+                <IconCardsGridOutline size="xs" color="#4338ca" />
+                <EditModeBannerText>Режим настройки рабочей среды — перетаскивайте и убирайте виджеты</EditModeBannerText>
+                <EditModeDoneBtn onClick={() => { setIsEditMode(false); setEditMenuOpen(false) }}>Готово</EditModeDoneBtn>
+              </EditModeBanner>
+            )}
 
             <ContentScroll $fading={fading}>
               <ContentInner>

@@ -1,28 +1,7 @@
 import { useState } from 'react'
 import styled from 'styled-components'
-import { Button } from '@salutejs/plasma-web'
-
-const PrimaryButton = styled(Button)`
-  && {
-    background-color: #282538 !important;
-    color: #FFFFFF !important;
-    &:hover { background-color: #332f47 !important; }
-  }
-`
-
-const SecondaryButton = styled(Button)`
-  && {
-    background-color: #E5E7EB !important;
-    color: #282538 !important;
-    * { color: #282538 !important; }
-    &:hover {
-      background-color: #D1D5DB !important;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.10);
-      * { color: #282538 !important; }
-    }
-  }
-`
 import { IconFolderOutline, IconBlankDocOutline } from '@salutejs/plasma-icons'
+import { PrimaryButton, SecondaryButton } from './buttons'
 import {
   mockFiles,
   getChildren,
@@ -39,8 +18,8 @@ const DEFAULT_FOLDER = 'roga'
 const c = {
   text:         '#1a1a1a',
   textSec:      '#4b5563',
-  textTer:      '#9ca3af',
-  accent:       '#6374f1',
+  textTer:      '#6b7280',
+  accent:       '#4f46e5',
   accentDark:   '#4338ca',
   accentBg:     '#eef2ff',
   accentBorder: '#c7d2fe',
@@ -378,7 +357,7 @@ export function FilePicker({ isOpen, onClose, onConfirm, mode }: FilePickerProps
                 onClick={() => setActiveFolderId(folder.id)}
               >
                 <FolderIcon>
-                  <IconFolderOutline size="xs" color={activeFolderId === folder.id ? '#6374f1' : '#9ca3af'} />
+                  <IconFolderOutline size="xs" color={activeFolderId === folder.id ? '#4f46e5' : '#9ca3af'} />
                 </FolderIcon>
                 {folder.label}
               </TreeItem>

@@ -1,28 +1,7 @@
 import { useState } from 'react'
 import styled, { css } from 'styled-components'
-import { Button } from '@salutejs/plasma-web'
-
-const PrimaryButton = styled(Button)`
-  && {
-    background-color: #282538 !important;
-    color: #FFFFFF !important;
-    &:hover { background-color: #332f47 !important; }
-  }
-`
-
-const SecondaryButton = styled(Button)`
-  && {
-    background-color: #E5E7EB !important;
-    color: #282538 !important;
-    * { color: #282538 !important; }
-    &:hover {
-      background-color: #D1D5DB !important;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.10);
-      * { color: #282538 !important; }
-    }
-  }
-`
 import { IconClose, IconDrag, IconSettingsOutline } from '@salutejs/plasma-icons'
+import { PrimaryButton, SecondaryButton } from '../../components/shared/buttons'
 import { useNavigate, useOutletContext } from 'react-router-dom'
 import { useUserMode } from '../../context/UserModeContext'
 import {
@@ -40,7 +19,7 @@ import {
 const c = {
   text:        '#1a1a1a',
   textSec:     '#4b5563',
-  textTer:     '#9ca3af',
+  textTer:     '#6b7280',
   accent:      '#4f46e5',
   accentDark:  '#4338ca',
   accentBg:    '#eef2ff',
@@ -75,7 +54,7 @@ const WidgetWrapEl = styled.div<{ $edit: boolean }>`
       content: '';
       position: absolute;
       inset: -3px;
-      border: 1.5px dashed #6374f1;
+      border: 1.5px dashed #4f46e5;
       border-radius: 14px;
       pointer-events: none;
       z-index: 10;
@@ -101,7 +80,7 @@ const WidgetIconBtn = styled.button<{ $bare?: boolean }>`
   border: none;
   border-radius: 4px;
   background: ${({ $bare }) => ($bare ? 'transparent' : 'rgba(255, 255, 255, 0.92)')};
-  color: #6374f1;
+  color: #4f46e5;
   cursor: pointer;
   padding: 0;
   transition: background 0.1s, color 0.1s;
@@ -310,7 +289,7 @@ function BasicView({ isEditMode, showToast }: ViewProps) {
           </div>
           <SecondaryButton
             size="m"
-            text="Продолжить →"
+            text="Продолжить"
             onClick={() => navigate(activeTask ? '/task' : '/main')}
           />
         </BasicCard>
@@ -680,7 +659,7 @@ const EXPERT_QUICK_ACTIONS = [
   { label: 'Создать заявку', route: '/task'     },
   { label: 'Открыть задачи', route: '/tasks'    },
   { label: 'В проекты',      route: '/projects' },
-  { label: 'Почта (2)',      route: '/main'     },
+  { label: 'Почта (2)',      route: '/mail'     },
 ]
 
 const WORK_FILTERS: { key: WorkFilter; label: string }[] = [

@@ -1,29 +1,7 @@
 import { useState } from 'react'
 import styled from 'styled-components'
-import { Button } from '@salutejs/plasma-web'
-
-const PrimaryButton = styled(Button)`
-  && {
-    background-color: #282538 !important;
-    color: #FFFFFF !important;
-    &:hover { background-color: #332f47 !important; }
-  }
-`
-
-const TertiaryButton = styled(Button)`
-  && {
-    background-color: #F3F4F6 !important;
-    color: #4B5563 !important;
-    * { color: #4B5563 !important; }
-    box-shadow: none !important;
-    &:hover {
-      background-color: #E5E7EB !important;
-      color: #374151 !important;
-      * { color: #374151 !important; }
-    }
-  }
-`
 import { useNavigate } from 'react-router-dom'
+import { PrimaryButton, TertiaryButton } from '../../components/shared/buttons'
 import { useUserMode, type UserMode } from '../../context/UserModeContext'
 import { track } from '../../utils/analytics'
 
@@ -192,7 +170,7 @@ const OptionBtn = styled.button<{ $selected: boolean }>`
   width: 100%;
   padding: 0.75rem 1rem;
   background: ${({ $selected }) => ($selected ? '#eef2ff' : '#ffffff')};
-  border: 1.5px solid ${({ $selected }) => ($selected ? '#6374f1' : '#e5e7eb')};
+  border: 1.5px solid ${({ $selected }) => ($selected ? '#4f46e5' : '#e5e7eb')};
   border-radius: 10px;
   font-size: 0.875rem;
   color: ${({ $selected }) => ($selected ? '#3730a3' : '#374151')};
@@ -201,7 +179,7 @@ const OptionBtn = styled.button<{ $selected: boolean }>`
   cursor: pointer;
   transition: border-color 0.12s, background 0.12s;
   &:hover {
-    border-color: ${({ $selected }) => ($selected ? '#6374f1' : '#a5b4fc')};
+    border-color: ${({ $selected }) => ($selected ? '#4f46e5' : '#a5b4fc')};
     background: ${({ $selected }) => ($selected ? '#eef2ff' : '#f8f9ff')};
   }
 `
@@ -210,8 +188,8 @@ const Radio = styled.span<{ $selected: boolean }>`
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  border: 2px solid ${({ $selected }) => ($selected ? '#6374f1' : '#d1d5db')};
-  background: ${({ $selected }) => ($selected ? '#6374f1' : 'transparent')};
+  border: 2px solid ${({ $selected }) => ($selected ? '#4f46e5' : '#d1d5db')};
+  background: ${({ $selected }) => ($selected ? '#4f46e5' : 'transparent')};
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -290,7 +268,7 @@ const CardsRow = styled.div`
 const ModeCard = styled.div<{ $active: boolean }>`
   position: relative;
   background: ${({ $active }) => ($active ? '#eef2ff' : '#ffffff')};
-  border: 2px solid ${({ $active }) => ($active ? '#6374f1' : '#e5e7eb')};
+  border: 2px solid ${({ $active }) => ($active ? '#4f46e5' : '#e5e7eb')};
   border-radius: 16px;
   padding: 1.5rem;
   cursor: pointer;
@@ -299,7 +277,7 @@ const ModeCard = styled.div<{ $active: boolean }>`
     $active ? '0 0 0 4px rgba(99, 102, 241, 0.12)' : '0 1px 3px rgba(0,0,0,0.06)'};
 
   &:hover {
-    border-color: ${({ $active }) => ($active ? '#6374f1' : '#a5b4fc')};
+    border-color: ${({ $active }) => ($active ? '#4f46e5' : '#a5b4fc')};
     box-shadow: ${({ $active }) =>
       $active
         ? '0 0 0 4px rgba(99, 102, 241, 0.12)'
@@ -341,7 +319,7 @@ const ActiveBadge = styled.div`
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: #6374f1;
+  background: #4f46e5;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -391,7 +369,7 @@ const FeatureDot = styled.span<{ $active: boolean }>`
   height: 5px;
   border-radius: 50%;
   flex-shrink: 0;
-  background: ${({ $active }) => ($active ? '#6374f1' : '#d1d5db')};
+  background: ${({ $active }) => ($active ? '#4f46e5' : '#d1d5db')};
 `
 
 // ─── Actions ──────────────────────────────────────────────────────────────────
@@ -428,6 +406,8 @@ export function OnboardingModeSelect() {
   const [answers, setAnswers] = useState<Answers>([null, null, null])
   const [pendingAnswer, setPendingAnswer] = useState<number | null>(null)
   const [recommended, setRecommended] = useState<UserMode | null>(null)
+  // Пользователь явно выбрал режим (карточкой или квизом) — не перезатираем его при «Пропустить»
+  const [modeTouched, setModeTouched] = useState(false)
 
   function handleOpenQuiz() {
     setQuizOpen(true)
@@ -464,6 +444,7 @@ export function OnboardingModeSelect() {
       const rec = calcRecommendation(full)
       setRecommended(rec)
       setMode(rec)
+      setModeTouched(true)
       setStep('done')
       setPendingAnswer(null)
     }
@@ -483,10 +464,12 @@ export function OnboardingModeSelect() {
 
   function handleSkip() {
     localStorage.setItem('corpOsOnboarded', '1')
-    setMode('standard')
+    const finalMode: UserMode = modeTouched ? mode : 'standard'
+    if (!modeTouched) setMode('standard')
+    const title = MODE_OPTIONS.find(o => o.id === finalMode)?.title ?? 'Стандартный'
     navigate('/main', {
       state: {
-        pendingToast: 'Вы вошли в Стандартном режиме. Его можно изменить в верхней панели.',
+        pendingToast: `Вы вошли в режиме «${title}». Его можно изменить в верхней панели.`,
       },
     })
   }
@@ -563,7 +546,7 @@ export function OnboardingModeSelect() {
             <ModeCard
               key={opt.id}
               $active={isActive}
-              onClick={() => { setMode(opt.id); track('onboarding-mode-selected', { mode: opt.id }) }}
+              onClick={() => { setMode(opt.id); setModeTouched(true); track('onboarding-mode-selected', { mode: opt.id }) }}
             >
               {isRecommended && <RecommendBadge>Рекомендовано</RecommendBadge>}
 

@@ -1,16 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import styled from 'styled-components'
-import { Button } from '@salutejs/plasma-web'
 import { useNavigate } from 'react-router-dom'
 import { track } from '../../utils/analytics'
-
-const PrimaryButton = styled(Button)`
-  && {
-    background-color: #2F3A4C !important;
-    color: #FFFFFF !important;
-    &:hover { background-color: #332f47 !important; }
-  }
-`
+import { PrimaryButton } from '../../components/shared/buttons'
 import { useUserMode } from '../../context/UserModeContext'
 import {
   SEARCH_DOC,
@@ -120,7 +112,7 @@ const DDAllResultsBtn = styled.button<{ $active?: boolean }>`
   border-top: 1px solid #e2e8f0;
   text-align: left;
   font-size: 0.8125rem;
-  color: #6374f1;
+  color: #4f46e5;
   font-weight: 500;
   cursor: pointer;
   font-family: inherit;

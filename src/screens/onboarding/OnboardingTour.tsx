@@ -10,27 +10,8 @@ import {
 import type { FC } from 'react'
 import type { IconProps } from '@salutejs/plasma-icons'
 
-const PrimaryButton = styled(Button)`
-  && {
-    background-color: #282538 !important;
-    color: #FFFFFF !important;
-    &:hover { background-color: #332f47 !important; }
-  }
-`
-
-const SecondaryButton = styled(Button)`
-  && {
-    background-color: #E5E7EB !important;
-    color: #282538 !important;
-    * { color: #282538 !important; }
-    &:hover {
-      background-color: #D1D5DB !important;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.10);
-      * { color: #282538 !important; }
-    }
-  }
-`
 import { useNavigate } from 'react-router-dom'
+import { PrimaryButton, SecondaryButton } from '../../components/shared/buttons'
 import { useUserMode } from '../../context/UserModeContext'
 import { useTourHighlight, type HighlightZone } from '../../context/TourHighlightContext'
 import { track } from '../../utils/analytics'
@@ -110,7 +91,7 @@ const StepIconWrap = styled.div<{ $active: boolean }>`
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  color: #528DFA;
+  color: #4f46e5;
   transition: color 0.15s;
 `
 

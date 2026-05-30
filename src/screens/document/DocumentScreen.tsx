@@ -1,47 +1,12 @@
 import { useEffect, useState } from 'react'
 import styled from 'styled-components'
-import { Button } from '@salutejs/plasma-web'
 import {
   IconFileCheckOutline,
   IconDownload,
   IconClose,
 } from '@salutejs/plasma-icons'
-
-const PrimaryButton = styled(Button)`
-  && {
-    background-color: #282538 !important;
-    color: #FFFFFF !important;
-    &:hover { background-color: #332f47 !important; }
-  }
-`
-
-const SecondaryButton = styled(Button)`
-  && {
-    background-color: #E5E7EB !important;
-    color: #334155 !important;
-    * { color: #334155 !important; }
-    &:hover {
-      background-color: #D1D5DB !important;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.10);
-      * { color: #334155 !important; }
-    }
-  }
-`
-
-const TertiaryButton = styled(Button)`
-  && {
-    background-color: #F3F4F6 !important;
-    color: #4B5563 !important;
-    * { color: #4B5563 !important; }
-    box-shadow: none !important;
-    &:hover {
-      background-color: #E5E7EB !important;
-      color: #374151 !important;
-      * { color: #374151 !important; }
-    }
-  }
-`
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { PrimaryButton, SecondaryButton, TertiaryButton } from '../../components/shared/buttons'
 import { useOpenObjects } from '../../context/OpenObjectsContext'
 
 // ─── Constants ────────────────────────────────────────────────────────────────

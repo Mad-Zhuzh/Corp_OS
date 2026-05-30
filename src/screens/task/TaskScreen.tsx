@@ -2,42 +2,8 @@ import { useState, useEffect, type MouseEvent } from 'react'
 import { track } from '../../utils/analytics'
 import styled from 'styled-components'
 import { Button } from '@salutejs/plasma-web'
-
-const PrimaryButton = styled(Button)`
-  && {
-    background-color: #282538 !important;
-    color: #FFFFFF !important;
-    &:hover { background-color: #332f47 !important; }
-  }
-`
-
-const SecondaryButton = styled(Button)`
-  && {
-    background-color: #E5E7EB !important;
-    color: #282538 !important;
-    * { color: #282538 !important; }
-    &:hover {
-      background-color: #D1D5DB !important;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.10);
-      * { color: #282538 !important; }
-    }
-  }
-`
-
-const TertiaryButton = styled(Button)`
-  && {
-    background-color: #F3F4F6 !important;
-    color: #4B5563 !important;
-    * { color: #4B5563 !important; }
-    box-shadow: none !important;
-    &:hover {
-      background-color: #E5E7EB !important;
-      color: #374151 !important;
-      * { color: #374151 !important; }
-    }
-  }
-`
 import { IconFolderOutline, IconEditOutline, IconDoneCircleOutline } from '@salutejs/plasma-icons'
+import { PrimaryButton, SecondaryButton, TertiaryButton } from '../../components/shared/buttons'
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import { useUserMode } from '../../context/UserModeContext'
 import { useOpenObjects } from '../../context/OpenObjectsContext'
@@ -50,6 +16,7 @@ import {
 } from '../../data/mockData'
 import { FilePicker } from '../../components/shared/FilePicker'
 import { mockFiles, type MockFile } from '../../data/filesMockData'
+import { pluralAttachedFiles } from '../../utils/plural'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -96,8 +63,8 @@ const STATUS_LABELS: Record<RequestStatus, { full: string; short: string }> = {
 const c = {
   text:          '#1a1a1a',
   textSec:       '#4b5563',
-  textTer:       '#9ca3af',
-  accent:        '#6374f1',
+  textTer:       '#6b7280',
+  accent:        '#4f46e5',
   accentDark:    '#4338ca',
   accentBg:      '#eef2ff',
   accentBorder:  '#c7d2fe',
@@ -296,7 +263,7 @@ const SuccessBox = styled.div`
   padding: 2rem 2.5rem;
   max-width: 520px;
 `
-const SuccessIcon = styled.div`font-size: 2rem; margin-bottom: 0.75rem;`
+const SuccessIcon = styled.div`display: flex; margin-bottom: 0.75rem;`
 const SuccessTitle = styled.div`
   font-size: 1.5rem;
   font-weight: 700;
@@ -405,7 +372,7 @@ function StandardTaskView({ form, update, errors, taskState, requests, onReview,
       <div>
         {taskState === 'success' && (
           <SuccessBox>
-            <SuccessIcon>✓</SuccessIcon>
+            <SuccessIcon><IconDoneCircleOutline size="m" color={c.ok} /></SuccessIcon>
             <SuccessTitle>Заявка {REQUEST_NUMBER} отправлена</SuccessTitle>
             <SuccessDesc>
               Подтверждение придёт на корпоративную почту. Статус можно проверить в списке заявок.
@@ -424,7 +391,7 @@ function StandardTaskView({ form, update, errors, taskState, requests, onReview,
             <Card>
               <ReviewData form={form} />
               <ActRow>
-                <TertiaryButton size="m" text="← Назад" onClick={onEdit} />
+                <TertiaryButton size="m" text="Назад" onClick={onEdit} />
                 <PrimaryButton size="m" text="Отправить" onClick={onSubmit} />
               </ActRow>
             </Card>
@@ -755,10 +722,10 @@ function BasicFolderFlow({ initialFiles, onReset }: BasicFolderFlowProps) {
               <FileDropZone onClick={() => setPickerOpen(true)}>
                 <IconFolderOutline size="m" color="#9ca3af" />
                 <FileDropZoneText>Добавьте файлы</FileDropZoneText>
-                <SecondaryButton size="s" text="Выбрать файлы" onClick={(e: MouseEvent) => { e.stopPropagation(); setPickerOpen(true) }} />
+                <PrimaryButton size="s" text="Выбрать файлы" onClick={(e: MouseEvent) => { e.stopPropagation(); setPickerOpen(true) }} />
               </FileDropZone>
               <ActRow style={{ marginTop: '0.5rem' }}>
-                <TertiaryButton size="m" text="← Назад" onClick={onReset} />
+                <TertiaryButton size="m" text="Назад" onClick={onReset} />
               </ActRow>
             </>
           ) : (
@@ -775,9 +742,9 @@ function BasicFolderFlow({ initialFiles, onReset }: BasicFolderFlowProps) {
                 )
               })}
               <ActRow>
-                <PrimaryButton size="m" text="Далее →" onClick={tryNext} />
+                <PrimaryButton size="m" text="Далее" onClick={tryNext} />
                 <SecondaryButton size="m" text="Изменить файлы" onClick={() => setPickerOpen(true)} />
-                <TertiaryButton size="m" text="← Назад" onClick={onReset} />
+                <TertiaryButton size="m" text="Назад" onClick={onReset} />
               </ActRow>
             </>
           )}
@@ -801,8 +768,8 @@ function BasicFolderFlow({ initialFiles, onReset }: BasicFolderFlowProps) {
             <FlDataRow><FlDataKey>Назначение</FlDataKey><FlDataVal>{FOLDER_REQ.purpose}</FlDataVal></FlDataRow>
           </FlDataCard>
           <ActRow>
-            <PrimaryButton size="m" text="Верно →" onClick={tryNext} />
-            <TertiaryButton size="m" text="← Назад" onClick={() => { setStepErr(''); setStep(1) }} />
+            <PrimaryButton size="m" text="Верно" onClick={tryNext} />
+            <TertiaryButton size="m" text="Назад" onClick={() => { setStepErr(''); setStep(1) }} />
           </ActRow>
         </Card>
       )}
@@ -826,8 +793,8 @@ function BasicFolderFlow({ initialFiles, onReset }: BasicFolderFlowProps) {
             <FHint>Необязательно</FHint>
           </FGroup>
           <ActRow>
-            <PrimaryButton size="m" text="Продолжить →" onClick={tryNext} />
-            <TertiaryButton size="m" text="← Назад" onClick={() => { setStepErr(''); setStep(2) }} />
+            <PrimaryButton size="m" text="Продолжить" onClick={tryNext} />
+            <TertiaryButton size="m" text="Назад" onClick={() => { setStepErr(''); setStep(2) }} />
           </ActRow>
         </Card>
       )}
@@ -849,7 +816,7 @@ function BasicFolderFlow({ initialFiles, onReset }: BasicFolderFlowProps) {
             <FlDataRow>
               <FlDataKey>Файлы</FlDataKey>
               <FlDataVal>
-                <div>{attachedFiles.length} прикреплённых файла:</div>
+                <div>{pluralAttachedFiles(attachedFiles.length)}:</div>
                 {attachedFiles.map(f => (
                   <div key={f.id} style={{ fontWeight: 400, color: '#6b7280', marginTop: '0.15rem' }}>{f.name}</div>
                 ))}
@@ -858,7 +825,7 @@ function BasicFolderFlow({ initialFiles, onReset }: BasicFolderFlowProps) {
           </FlDataCard>
           <ActRow>
             <PrimaryButton size="m" text="Отправить заявку" onClick={() => { track('task-completed', { mode: 'basic', method: 'folder' }); setDone(true) }} />
-            <TertiaryButton size="m" text="← Назад" onClick={() => setStep(3)} />
+            <TertiaryButton size="m" text="Назад" onClick={() => setStep(3)} />
           </ActRow>
         </Card>
       )}
@@ -915,7 +882,7 @@ function BasicManualFlow({ onReset }: { onReset: () => void }) {
         </FlDataCard>
         <ActRow>
           <PrimaryButton size="m" text="Отправить заявку" onClick={() => { track('task-completed', { mode: 'basic', method: 'manual' }); setDone(true) }} />
-          <TertiaryButton size="m" text="← Назад" onClick={() => setShowReview(false)} />
+          <TertiaryButton size="m" text="Назад" onClick={() => setShowReview(false)} />
         </ActRow>
       </FlRoot>
     )
@@ -956,8 +923,8 @@ function BasicManualFlow({ onReset }: { onReset: () => void }) {
           <Textarea placeholder="Необязательно" value={comment} onChange={e => setComment(e.target.value)} />
         </FGroup>
         <ActRow>
-          <PrimaryButton size="m" text="Проверить заявку →" onClick={() => setShowReview(true)} />
-          <TertiaryButton size="m" text="← Назад" onClick={onReset} />
+          <PrimaryButton size="m" text="Проверить заявку" onClick={() => setShowReview(true)} />
+          <TertiaryButton size="m" text="Назад" onClick={onReset} />
         </ActRow>
       </Card>
     </FlRoot>
@@ -1028,9 +995,22 @@ function StandardFolderFlow({ initialFiles }: StandardFolderFlowProps) {
   const [preview, setPreview]     = useState(false)
   const [done, setDone]           = useState(false)
   const [deadlineErr, setDeadlineErr] = useState('')
+  const [fieldErrs, setFieldErrs] = useState<Record<string, string>>({})
 
   function handleNext() {
-    if (!deadline.trim()) { setDeadlineErr('Укажите срок исполнения'); return }
+    const errs: Record<string, string> = {}
+    if (!hasFiles) {
+      autoFields.forEach(({ key, label }) => {
+        if (!editVals[key].trim()) errs[key] = `Заполните поле «${label}»`
+      })
+    }
+    const noDeadline = !deadline.trim()
+    if (Object.keys(errs).length > 0 || noDeadline) {
+      setFieldErrs(errs)
+      setDeadlineErr(noDeadline ? 'Укажите срок исполнения' : '')
+      return
+    }
+    setFieldErrs({})
     setDeadlineErr('')
     setPreview(true)
   }
@@ -1076,7 +1056,7 @@ function StandardFolderFlow({ initialFiles }: StandardFolderFlowProps) {
           <FlDataRow>
             <FlDataKey>Файлы</FlDataKey>
             <FlDataVal>
-              <div>{attachedFiles.length} прикреплённых файла:</div>
+              <div>{pluralAttachedFiles(attachedFiles.length)}:</div>
               {attachedFiles.map(f => (
                 <div key={f.id} style={{ fontWeight: 400, color: '#6b7280', marginTop: '0.15rem' }}>{f.name}</div>
               ))}
@@ -1085,7 +1065,7 @@ function StandardFolderFlow({ initialFiles }: StandardFolderFlowProps) {
         </FlDataCard>
         <ActRow>
           <PrimaryButton size="m" text="Отправить заявку" onClick={() => { track('task-completed', { mode, method: 'folder' }); setDone(true) }} />
-          <TertiaryButton size="m" text="← Назад" onClick={() => setPreview(false)} />
+          <TertiaryButton size="m" text="Назад" onClick={() => setPreview(false)} />
         </ActRow>
       </div>
     )
@@ -1140,7 +1120,7 @@ function StandardFolderFlow({ initialFiles }: StandardFolderFlowProps) {
           <Card>
             {autoFields.map(({ key, label }) => (
               <FGroup key={key}>
-                <FLabel style={{ marginBottom: '0.375rem' }}>{label}</FLabel>
+                <FLabel $req={!hasFiles} style={{ marginBottom: '0.375rem' }}>{label}</FLabel>
                 {hasFiles && unlocked.has(key) ? (
                   <>
                     <FlInput
@@ -1162,11 +1142,19 @@ function StandardFolderFlow({ initialFiles }: StandardFolderFlowProps) {
                     {mode !== 'expert' && <StdSourceNote>✓ Найдено в файле: {FIELD_SOURCE[key]}</StdSourceNote>}
                   </>
                 ) : (
-                  <FlInput
-                    value={editVals[key]}
-                    onChange={e => setEditVals(v => ({ ...v, [key]: e.target.value }))}
-                    placeholder={label}
-                  />
+                  <>
+                    <FlInput
+                      value={editVals[key]}
+                      $err={!!fieldErrs[key]}
+                      onChange={e => {
+                        const val = e.target.value
+                        setEditVals(v => ({ ...v, [key]: val }))
+                        if (val.trim()) setFieldErrs(prev => { const n = { ...prev }; delete n[key]; return n })
+                      }}
+                      placeholder={label}
+                    />
+                    {fieldErrs[key] && <FError>{fieldErrs[key]}</FError>}
+                  </>
                 )}
               </FGroup>
             ))}
@@ -1190,7 +1178,7 @@ function StandardFolderFlow({ initialFiles }: StandardFolderFlowProps) {
             </FGroup>
 
             <ActRow>
-              <PrimaryButton size="m" text="Далее →" onClick={handleNext} />
+              <PrimaryButton size="m" text="Далее" onClick={handleNext} />
             </ActRow>
           </Card>
         </div>
@@ -1252,7 +1240,7 @@ function ExpertFolderFlow() {
         <FlDataRow>
           <FlDataKey>Файлы</FlDataKey>
           <FlDataVal>
-            <div>{FOLDER_REQ.filesCount} прикреплённых файла:</div>
+            <div>{pluralAttachedFiles(FOLDER_REQ.filesCount)}:</div>
             {FOLDER_REQ.files.map(f => (
               <div key={f.name} style={{ fontWeight: 400, color: '#6b7280', marginTop: '0.15rem' }}>{f.name}</div>
             ))}
@@ -1417,12 +1405,12 @@ export function TaskScreen() {
         <PageSubtitle>Выберите, как вы хотите начать</PageSubtitle>
         <MethodGrid>
           <MethodCard onClick={() => { track('task-method-selected', { mode: 'basic', method: 'files' }); setRootEntry('files') }}>
-            <MethodIcon><IconFolderOutline size="s" color="#6374f1" /></MethodIcon>
+            <MethodIcon><IconFolderOutline size="s" color="#4f46e5" /></MethodIcon>
             <MethodTitle>Из файлов</MethodTitle>
             <MethodDesc>Выберите документы — данные заполнятся автоматически</MethodDesc>
           </MethodCard>
           <MethodCard onClick={() => { track('task-method-selected', { mode: 'basic', method: 'manual' }); setRootEntry('manual') }}>
-            <MethodIcon><IconEditOutline size="s" color="#6374f1" /></MethodIcon>
+            <MethodIcon><IconEditOutline size="s" color="#4f46e5" /></MethodIcon>
             <MethodTitle>Заполнить вручную</MethodTitle>
             <MethodDesc>Введите все данные самостоятельно шаг за шагом</MethodDesc>
           </MethodCard>

@@ -1,14 +1,6 @@
 import styled from 'styled-components'
-import { Button } from '@salutejs/plasma-web'
-
-const PrimaryButton = styled(Button)`
-  && {
-    background-color: #282538 !important;
-    color: #FFFFFF !important;
-    &:hover { background-color: #332f47 !important; }
-  }
-`
 import { useNavigate } from 'react-router-dom'
+import { PrimaryButton } from '../../components/shared/buttons'
 import { useUserMode } from '../../context/UserModeContext'
 import { track } from '../../utils/analytics'
 

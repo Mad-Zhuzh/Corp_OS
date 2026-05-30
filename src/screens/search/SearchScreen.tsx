@@ -1,29 +1,10 @@
-import { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import styled from 'styled-components'
 import { Button } from '@salutejs/plasma-web'
 import { track } from '../../utils/analytics'
-
-const PrimaryButton = styled(Button)`
-  && {
-    background-color: #282538 !important;
-    color: #FFFFFF !important;
-    &:hover { background-color: #332f47 !important; }
-  }
-`
-
-const SecondaryButton = styled(Button)`
-  && {
-    background-color: #E5E7EB !important;
-    color: #282538 !important;
-    * { color: #282538 !important; }
-    &:hover {
-      background-color: #D1D5DB !important;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.10);
-      * { color: #282538 !important; }
-    }
-  }
-`
+import { pluralResults } from '../../utils/plural'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { PrimaryButton, SecondaryButton } from '../../components/shared/buttons'
 import { useUserMode } from '../../context/UserModeContext'
 import { useOpenObjects } from '../../context/OpenObjectsContext'
 import {
@@ -41,12 +22,21 @@ const TYPE_STYLE: Record<string, { bg: string; color: string }> = {
   xlsx: { bg: '#dcfce7', color: '#15803d' },
 }
 
+type StdFilterKey = 'all' | 'documents' | 'services' | 'actions'
+
+const STD_FILTERS: { key: StdFilterKey; label: string }[] = [
+  { key: 'all',       label: 'Все' },
+  { key: 'documents', label: 'Документы' },
+  { key: 'services',  label: 'Сервисы' },
+  { key: 'actions',   label: 'Действия' },
+]
+
 // ─── Shared tokens ────────────────────────────────────────────────────────────
 
 const c = {
   text:         '#1a1a1a',
   textSec:      '#4b5563',
-  textTer:      '#9ca3af',
+  textTer:      '#6b7280',
   accent:       '#4f46e5',
   accentDark:   '#4338ca',
   accentBg:     '#eef2ff',
@@ -210,13 +200,16 @@ const FileResultsList = styled.div`
   gap: 0.5rem;
 `
 
-function FileRow({ file, onClick }: { file: MockFile; onClick: () => void }) {
+function FileRow({ file, onClick, showOpenBtn }: { file: MockFile; onClick: () => void; showOpenBtn?: boolean }) {
   const s = TYPE_STYLE[file.type] ?? TYPE_STYLE.pdf
   return (
-    <FileResultRow onClick={onClick}>
+    <FileResultRow onClick={showOpenBtn ? undefined : onClick} style={showOpenBtn ? { cursor: 'default' } : undefined}>
       <FileIconBadge $bg={s.bg} $color={s.color}>{file.type.toUpperCase()}</FileIconBadge>
       <FileResultName>{file.name}</FileResultName>
       <FileResultMeta>{file.date}</FileResultMeta>
+      {showOpenBtn && (
+        <SecondaryButton size="s" text="Открыть" onClick={(e: React.MouseEvent) => { e.stopPropagation(); onClick() }} />
+      )}
     </FileResultRow>
   )
 }
@@ -406,7 +399,13 @@ export function SearchScreen() {
   const kbItemsRef  = useRef<{ action: () => void }[]>([])
   const activeIdxRef = useRef(-1)
 
-  useEffect(() => { setActiveIndex(-1); activeIdxRef.current = -1 }, [query])
+  // ── Category filter (standard mode) ─────────────────────────────────────────
+  const [stdFilter, setStdFilter] = useState<StdFilterKey>('all')
+
+  useEffect(() => {
+    setActiveIndex(-1); activeIdxRef.current = -1
+    setStdFilter('all')
+  }, [query])
 
   useEffect(() => {
     if (mode !== 'expert') return
@@ -460,9 +459,7 @@ export function SearchScreen() {
   if (!query) {
     return (
       <div style={{ maxWidth: 640 }}>
-        <PageTitle>
-          {mode === 'basic' ? 'Результаты поиска' : mode === 'standard' ? 'Результаты поиска' : 'Результаты поиска'}
-        </PageTitle>
+        <PageTitle>Поиск</PageTitle>
         <PageSubtitle>Введите запрос в строку поиска выше</PageSubtitle>
       </div>
     )
@@ -473,10 +470,15 @@ export function SearchScreen() {
     const matched  = isSearchMatch(query)
     const fileRes  = getFileResults(query)
     const anyResult = matched || fileRes.length > 0
+    const total    = (matched ? 1 : 0) + fileRes.length
     return (
       <BasicWrapper>
         <PageTitle>Результаты поиска</PageTitle>
-        {matched && <PageSubtitle>Похоже, это то что вам нужно</PageSubtitle>}
+        {anyResult && (
+          <PageSubtitle>
+            Найдено {pluralResults(total)} по запросу «{query}»
+          </PageSubtitle>
+        )}
 
         {matched && (
           <>
@@ -498,7 +500,7 @@ export function SearchScreen() {
             {matched && <SectionLabel>Файлы</SectionLabel>}
             <FileResultsList>
               {fileRes.map(f => (
-                <FileRow key={f.id} file={f} onClick={fileClickHandler(f)} />
+                <FileRow key={f.id} file={f} onClick={fileClickHandler(f)} showOpenBtn />
               ))}
             </FileResultsList>
           </FileResultsSection>
@@ -525,32 +527,38 @@ export function SearchScreen() {
     const matched  = isSearchMatch(query)
     const fileRes  = getFileResults(query)
     const total    = (matched ? 1 : 0) + fileRes.length
-    const FILTERS  = [
-      { key: 'all', label: 'Все' },
-      { key: 'documents', label: 'Документы' },
-      { key: 'services', label: 'Сервисы' },
-      { key: 'actions', label: 'Действия' },
-    ]
+
+    // Результаты этого экрана — документы и файлы (тоже документы).
+    // Категории «Сервисы» и «Действия» в текущих данных пусты.
+    const docsActive = stdFilter === 'all' || stdFilter === 'documents'
+    const showDoc    = matched && docsActive
+    const visibleFiles = docsActive ? fileRes : []
+    const visibleCount = (showDoc ? 1 : 0) + visibleFiles.length
+
     return (
       <StandardWrapper>
         <PageTitle style={{ marginBottom: '1.25rem' }}>Результаты поиска</PageTitle>
         <PageSubtitle>
           {total > 0
-            ? `Найдено ${total} ${total === 1 ? 'результат' : 'результата'} по запросу «${query}»`
+            ? `Найдено ${pluralResults(total)} по запросу «${query}»`
             : `По запросу «${query}» ничего не найдено`}
         </PageSubtitle>
 
         {total > 0 && (
           <FiltersRow>
-            {FILTERS.map(f => (
-              <FilterChip key={f.key} $active={f.key === 'all'} onClick={() => {}}>
+            {STD_FILTERS.map(f => (
+              <FilterChip
+                key={f.key}
+                $active={stdFilter === f.key}
+                onClick={() => setStdFilter(f.key)}
+              >
                 {f.label}
               </FilterChip>
             ))}
           </FiltersRow>
         )}
 
-        {matched && (
+        {showDoc && (
           <StandardResultRow style={{ marginBottom: '0.5rem' }}>
             <PdfIconSm>PDF</PdfIconSm>
             <StandardResultBody>
@@ -564,12 +572,18 @@ export function SearchScreen() {
           </StandardResultRow>
         )}
 
-        {fileRes.length > 0 && (
-          <FileResultsList style={{ marginTop: matched ? '0.5rem' : 0 }}>
-            {fileRes.map(f => (
+        {visibleFiles.length > 0 && (
+          <FileResultsList style={{ marginTop: showDoc ? '0.5rem' : 0 }}>
+            {visibleFiles.map(f => (
               <FileRow key={f.id} file={f} onClick={fileClickHandler(f)} />
             ))}
           </FileResultsList>
+        )}
+
+        {total > 0 && visibleCount === 0 && (
+          <div style={{ fontSize: '0.875rem', color: c.textSec }}>
+            В категории «{STD_FILTERS.find(f => f.key === stdFilter)?.label}» ничего не найдено.
+          </div>
         )}
 
         {total === 0 && (
