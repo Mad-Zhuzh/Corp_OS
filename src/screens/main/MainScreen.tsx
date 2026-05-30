@@ -899,7 +899,12 @@ const ExpertRightItem = styled.div`
   font-size: 0.8125rem;
   color: ${c.textSec};
   line-height: 1.5;
-  padding: 0.2rem 0;
+  padding: 0.2rem 0.375rem;
+  margin: 0 -0.375rem;
+  border-radius: 4px;
+  transition: background 0.12s;
+  cursor: default;
+  &:hover { background: #edf3ff; }
 `
 
 const ExpertRightItemNew = styled(ExpertRightItem)`
@@ -908,6 +913,7 @@ const ExpertRightItemNew = styled(ExpertRightItem)`
   border-left: 2px solid ${c.accent};
   padding-left: 0.5rem;
   margin-left: -0.5rem;
+  margin-right: -0.375rem;
 `
 
 const ExpertMeetingTime = styled.span`

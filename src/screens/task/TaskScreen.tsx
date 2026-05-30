@@ -1,4 +1,4 @@
-import { useState, useEffect, type MouseEvent } from 'react'
+import { useState, useEffect, useCallback, type MouseEvent } from 'react'
 import { track } from '../../utils/analytics'
 import styled from 'styled-components'
 import { Button } from '@salutejs/plasma-web'
@@ -7,56 +7,9 @@ import { PrimaryButton, SecondaryButton, TertiaryButton } from '../../components
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import { useUserMode } from '../../context/UserModeContext'
 import { useOpenObjects } from '../../context/OpenObjectsContext'
-import {
-  taskServices,
-  taskDurations,
-  mockRequests,
-  type RequestStatus,
-  type MockRequest,
-} from '../../data/mockData'
 import { FilePicker } from '../../components/shared/FilePicker'
 import { mockFiles, type MockFile } from '../../data/filesMockData'
 import { pluralAttachedFiles } from '../../utils/plural'
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-type TaskState = 'filling' | 'error' | 'review' | 'success'
-
-interface FormData {
-  service: string
-  purpose: string
-  duration: string
-  comment: string
-}
-
-interface FormErrors {
-  service?: string
-  purpose?: string
-  duration?: string
-}
-
-// ─── Logic ────────────────────────────────────────────────────────────────────
-
-const REQUEST_NUMBER = '#1043'
-
-function validate(data: FormData): FormErrors {
-  const e: FormErrors = {}
-  if (!data.service) e.service = 'Выберите сервис'
-  if (!data.purpose.trim()) e.purpose = 'Укажите цель доступа'
-  if (!data.duration) e.duration = 'Выберите срок доступа'
-  return e
-}
-
-function hasErrors(e: FormErrors): boolean {
-  return Object.keys(e).length > 0
-}
-
-const STATUS_LABELS: Record<RequestStatus, { full: string; short: string }> = {
-  approved: { full: 'Одобрена',        short: 'Одобрена' },
-  pending:  { full: 'На согласовании', short: 'Ожидает' },
-  rejected: { full: 'Отклонена',       short: 'Отклонена' },
-  sent:     { full: 'Отправлена',      short: 'Отправлена' },
-}
 
 // ─── Shared design tokens ─────────────────────────────────────────────────────
 
@@ -150,7 +103,6 @@ const FError = styled.div`
   font-weight: 500;
 `
 
-// TODO: заменить на TextField / TextArea из @salutejs/plasma-web
 const Textarea = styled.textarea<{ $err?: boolean; $compact?: boolean }>`
   width: 100%;
   padding: ${({ $compact }) => ($compact ? '0.5rem 0.75rem' : '0.75rem 0.875rem')};
@@ -204,78 +156,6 @@ const ActRow = styled.div`
   flex-wrap: wrap;
 `
 
-// ─── Status badge ─────────────────────────────────────────────────────────────
-
-const StatusBadge = styled.span<{ $status: RequestStatus }>`
-  font-size: 0.75rem;
-  font-weight: 600;
-  padding: 0.2rem 0.5rem;
-  border-radius: 5px;
-  flex-shrink: 0;
-  white-space: nowrap;
-  background: ${({ $status }) =>
-    $status === 'approved' ? c.okBg :
-    $status === 'pending'  ? c.pendingBg :
-    $status === 'sent'     ? c.sentBg :
-    c.errBg};
-  color: ${({ $status }) =>
-    $status === 'approved' ? c.ok :
-    $status === 'pending'  ? c.pendingText :
-    $status === 'sent'     ? c.sentText :
-    c.err};
-  border: 1px solid ${({ $status }) =>
-    $status === 'approved' ? c.okBorder :
-    $status === 'pending'  ? c.pendingBorder :
-    $status === 'sent'     ? c.sentBorder :
-    c.errBorder};
-`
-
-// ─── Review data grid ─────────────────────────────────────────────────────────
-
-const RevGrid = styled.div`display: flex; flex-direction: column;`
-const RevRow = styled.div`
-  display: flex;
-  gap: 1.5rem;
-  padding: 0.625rem 0;
-  border-bottom: 1px solid ${c.border};
-  &:last-child { border-bottom: none; }
-`
-const RevKey = styled.div`font-size: 0.8125rem; color: ${c.textTer}; width: 100px; flex-shrink: 0;`
-const RevVal = styled.div`font-size: 0.8125rem; color: ${c.text}; font-weight: 500;`
-
-function ReviewData({ form, dense }: { form: FormData; dense?: boolean }) {
-  return (
-    <RevGrid style={dense ? { gap: 0 } : {}}>
-      <RevRow><RevKey>Сервис</RevKey><RevVal>{form.service}</RevVal></RevRow>
-      <RevRow><RevKey>Цель</RevKey><RevVal>{form.purpose}</RevVal></RevRow>
-      <RevRow><RevKey>Срок</RevKey><RevVal>{form.duration}</RevVal></RevRow>
-      {form.comment && <RevRow><RevKey>Комментарий</RevKey><RevVal>{form.comment}</RevVal></RevRow>}
-    </RevGrid>
-  )
-}
-
-// ─── Success styled primitives (shared across views) ─────────────────────────
-
-const SuccessBox = styled.div`
-  background: ${c.okBg};
-  border: 1px solid ${c.okBorder};
-  border-radius: 16px;
-  padding: 2rem 2.5rem;
-  max-width: 520px;
-`
-const SuccessIcon = styled.div`display: flex; margin-bottom: 0.75rem;`
-const SuccessTitle = styled.div`
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: ${c.ok};
-  margin-bottom: 0.5rem;
-`
-const SuccessDesc = styled.div`
-  font-size: 0.9375rem;
-  color: ${c.textSec};
-  line-height: 1.55;
-  margin-bottom: 1.5rem;
-`
 // ─── Wizard styled components ─────────────────────────────────────────────────
 const StepBar = styled.div`
   height: 4px; border-radius: 2px; background: ${c.border}; margin-bottom: 1.5rem; overflow: hidden;
@@ -299,174 +179,6 @@ const BasicErrBox = styled.div`
 `
 const BasicErrTitle = styled.div`font-size: 0.9375rem; font-weight: 700; color: ${c.err}; margin-bottom: 0.25rem;`
 const BasicErrDesc = styled.div`font-size: 0.875rem; color: ${c.textSec};`
-
-// ─── Standard: two-column, inline success ────────────────────────────────────
-
-const ErrSummary = styled.div`
-  background: ${c.errBg}; border: 1px solid ${c.errBorder}; border-radius: 10px;
-  padding: 0.875rem 1.125rem; margin-bottom: 1.5rem;
-`
-const ErrSummaryTitle = styled.div`font-size: 0.875rem; font-weight: 700; color: ${c.err}; margin-bottom: 0.375rem;`
-const ErrSummaryList = styled.ul`
-  margin: 0; padding-left: 1.25rem; font-size: 0.8125rem; color: ${c.err};
-  li { margin-bottom: 0.2rem; }
-`
-
-const StandardPageLayout = styled.div`
-  display: grid;
-  grid-template-columns: minmax(0, 560px) 272px;
-  gap: 1.5rem;
-  align-items: start;
-  max-width: 920px;
-`
-const ReqSidePanel = styled.div`
-  background: ${c.cardBg}; border: 1px solid ${c.border}; border-radius: 12px;
-  overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-`
-const ReqSideItem = styled.div`
-  padding: 0.75rem 1rem; border-bottom: 1px solid ${c.border};
-  &:last-child { border-bottom: none; }
-`
-const ReqSideItemTop = styled.div`
-  display: flex; align-items: flex-start; justify-content: space-between;
-  gap: 0.5rem; margin-bottom: 0.25rem;
-`
-const ReqSideItemTitle = styled.div`font-size: 0.8125rem; font-weight: 500; color: ${c.text}; flex: 1; min-width: 0;`
-const ReqSideItemMeta = styled.div`font-size: 0.75rem; color: ${c.textTer};`
-
-interface StdProps {
-  form: FormData
-  update: (u: Partial<FormData>) => void
-  errors: FormErrors
-  taskState: TaskState
-  requests: MockRequest[]
-  onReview: () => void
-  onSubmit: () => void
-  onEdit: () => void
-  onReset: () => void
-  onGoToMain: () => void
-}
-
-function StandardTaskView({ form, update, errors, taskState, requests, onReview, onSubmit, onEdit, onReset, onGoToMain }: StdProps) {
-  const showErrors = taskState === 'error' && hasErrors(errors)
-
-  const rightPanel = (
-    <div>
-      <SecLabel>Последние заявки</SecLabel>
-      <ReqSidePanel>
-        {requests.map(r => (
-          <ReqSideItem key={r.id}>
-            <ReqSideItemTop>
-              <ReqSideItemTitle>{r.title}</ReqSideItemTitle>
-              <StatusBadge $status={r.status}>{STATUS_LABELS[r.status].full}</StatusBadge>
-            </ReqSideItemTop>
-            <ReqSideItemMeta>{r.id} · {r.date}</ReqSideItemMeta>
-          </ReqSideItem>
-        ))}
-      </ReqSidePanel>
-    </div>
-  )
-
-  return (
-    <StandardPageLayout>
-      <div>
-        {taskState === 'success' && (
-          <SuccessBox>
-            <SuccessIcon><IconDoneCircleOutline size="m" color={c.ok} /></SuccessIcon>
-            <SuccessTitle>Заявка {REQUEST_NUMBER} отправлена</SuccessTitle>
-            <SuccessDesc>
-              Подтверждение придёт на корпоративную почту. Статус можно проверить в списке заявок.
-            </SuccessDesc>
-            <ActRow>
-              <PrimaryButton size="m" text="На главный экран" onClick={onGoToMain} />
-              <SecondaryButton size="m" text="Создать ещё одну" onClick={onReset} />
-            </ActRow>
-          </SuccessBox>
-        )}
-
-        {taskState === 'review' && (
-          <>
-            <PageTitle>Проверьте заявку</PageTitle>
-            <PageSubtitle>Если что-то требует изменений — вернитесь к редактированию.</PageSubtitle>
-            <Card>
-              <ReviewData form={form} />
-              <ActRow>
-                <TertiaryButton size="m" text="Назад" onClick={onEdit} />
-                <PrimaryButton size="m" text="Отправить" onClick={onSubmit} />
-              </ActRow>
-            </Card>
-          </>
-        )}
-
-        {(taskState === 'filling' || taskState === 'error') && (
-          <>
-            <PageTitle>Заявки</PageTitle>
-            <PageSubtitle>Создайте новую заявку или проверьте статус существующих.</PageSubtitle>
-
-            {showErrors && (
-              <ErrSummary>
-                <ErrSummaryTitle>Исправьте ошибки перед продолжением</ErrSummaryTitle>
-                <ErrSummaryList>
-                  {errors.service && <li>{errors.service}</li>}
-                  {errors.purpose && <li>{errors.purpose}</li>}
-                  {errors.duration && <li>{errors.duration}</li>}
-                </ErrSummaryList>
-              </ErrSummary>
-            )}
-
-            <Card>
-              <FGroup>
-                <FLabel $req>Сервис</FLabel>
-                <OptionsRow>
-                  {taskServices.map(s => (
-                    <Opt key={s} $on={form.service === s} onClick={() => update({ service: s })}>{s}</Opt>
-                  ))}
-                </OptionsRow>
-                {showErrors && errors.service && <FError>{errors.service}</FError>}
-              </FGroup>
-
-              <FGroup>
-                <FLabel $req>Цель доступа</FLabel>
-                <Textarea
-                  placeholder="Например: работа с заявками клиентов"
-                  value={form.purpose}
-                  onChange={e => update({ purpose: e.target.value })}
-                  $err={showErrors && !!errors.purpose}
-                />
-                <FHint>Укажите рабочую задачу, для которой нужен доступ</FHint>
-                {showErrors && errors.purpose && <FError>{errors.purpose}</FError>}
-              </FGroup>
-
-              <FGroup>
-                <FLabel $req>Срок доступа</FLabel>
-                <OptionsRow>
-                  {taskDurations.map(d => (
-                    <Opt key={d} $on={form.duration === d} onClick={() => update({ duration: d })}>{d}</Opt>
-                  ))}
-                </OptionsRow>
-                {showErrors && errors.duration && <FError>{errors.duration}</FError>}
-              </FGroup>
-
-              <FGroup>
-                <FLabel>Комментарий</FLabel>
-                <Textarea
-                  placeholder="Необязательно"
-                  value={form.comment}
-                  onChange={e => update({ comment: e.target.value })}
-                />
-              </FGroup>
-
-              <ActRow>
-                <PrimaryButton size="m" text="Проверить заявку" onClick={onReview} />
-              </ActRow>
-            </Card>
-          </>
-        )}
-      </div>
-      {rightPanel}
-    </StandardPageLayout>
-  )
-}
 
 // ─── Folder-based request ─────────────────────────────────────────────────────
 
@@ -559,6 +271,16 @@ const FileDropZoneText = styled.div`font-size: 0.875rem; color: ${c.textSec}; fo
 
 const PRIORITIES = ['Обычный', 'Срочный', 'Критический'] as const
 type Priority = typeof PRIORITIES[number]
+
+interface ManualFormValues {
+  supplier: string
+  inn: string
+  amount: string
+  purpose: string
+  deadline: string
+  priority: Priority
+  comment: string
+}
 
 function PriorityPicker({ value, onChange }: { value: Priority; onChange: (v: Priority) => void }) {
   return (
@@ -835,17 +557,41 @@ function BasicFolderFlow({ initialFiles, onReset }: BasicFolderFlowProps) {
 
 // ─── Basic manual flow (procurement form) ─────────────────────────────────────
 
-function BasicManualFlow({ onReset }: { onReset: () => void }) {
+interface BasicManualFlowProps {
+  onReset: () => void
+  initialValues: ManualFormValues
+  onValuesChange: (v: ManualFormValues) => void
+}
+
+function BasicManualFlow({ onReset, initialValues, onValuesChange }: BasicManualFlowProps) {
   const navigate = useNavigate()
-  const [supplier, setSupplier] = useState('')
-  const [inn, setInn]           = useState('')
-  const [amount, setAmount]     = useState('')
-  const [purpose, setPurpose]   = useState('')
-  const [deadline, setDeadline] = useState('')
-  const [priority, setPriority] = useState<Priority>('Обычный')
-  const [comment, setComment]   = useState('')
+  const [supplier, setSupplier] = useState(initialValues.supplier)
+  const [inn, setInn]           = useState(initialValues.inn)
+  const [amount, setAmount]     = useState(initialValues.amount)
+  const [purpose, setPurpose]   = useState(initialValues.purpose)
+  const [deadline, setDeadline] = useState(initialValues.deadline)
+  const [priority, setPriority] = useState<Priority>(initialValues.priority)
+  const [comment, setComment]   = useState(initialValues.comment)
+  const [fieldErrs, setFieldErrs] = useState<Record<string, string>>({})
   const [done, setDone]         = useState(false)
   const [showReview, setShowReview] = useState(false)
+
+  useEffect(() => {
+    onValuesChange({ supplier, inn, amount, purpose, deadline, priority, comment })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [supplier, inn, amount, purpose, deadline, priority, comment])
+
+  function handleReview() {
+    const errs: Record<string, string> = {}
+    if (!supplier.trim()) errs.supplier = 'Заполните поле «Поставщик»'
+    if (!inn.trim())      errs.inn      = 'Заполните поле «ИНН»'
+    if (!amount.trim())   errs.amount   = 'Заполните поле «Сумма»'
+    if (!purpose.trim())  errs.purpose  = 'Заполните поле «Назначение»'
+    if (!deadline.trim()) errs.deadline = 'Заполните поле «Срок исполнения»'
+    if (Object.keys(errs).length > 0) { setFieldErrs(errs); return }
+    setFieldErrs({})
+    setShowReview(true)
+  }
 
   if (done) {
     return (
@@ -888,6 +634,10 @@ function BasicManualFlow({ onReset }: { onReset: () => void }) {
     )
   }
 
+  function clearErr(field: string, value: string) {
+    if (value.trim()) setFieldErrs(prev => { const n = { ...prev }; delete n[field]; return n })
+  }
+
   return (
     <FlRoot>
       <StepMeta>Шаг 1 из 2</StepMeta>
@@ -896,23 +646,28 @@ function BasicManualFlow({ onReset }: { onReset: () => void }) {
       <Card>
         <FGroup>
           <FLabel $req>Поставщик</FLabel>
-          <FlInput placeholder="Название организации" value={supplier} onChange={e => setSupplier(e.target.value)} />
+          <FlInput $err={!!fieldErrs.supplier} placeholder="Название организации" value={supplier} onChange={e => { setSupplier(e.target.value); clearErr('supplier', e.target.value) }} />
+          {fieldErrs.supplier && <FError>{fieldErrs.supplier}</FError>}
         </FGroup>
         <FGroup>
           <FLabel $req>ИНН</FLabel>
-          <FlInput placeholder="например: 7712345678" value={inn} onChange={e => setInn(e.target.value)} />
+          <FlInput $err={!!fieldErrs.inn} placeholder="например: 7712345678" value={inn} onChange={e => { setInn(e.target.value); clearErr('inn', e.target.value) }} />
+          {fieldErrs.inn && <FError>{fieldErrs.inn}</FError>}
         </FGroup>
         <FGroup>
           <FLabel $req>Сумма</FLabel>
-          <FlInput placeholder="например: 485 000 ₽" value={amount} onChange={e => setAmount(e.target.value)} />
+          <FlInput $err={!!fieldErrs.amount} placeholder="например: 485 000 ₽" value={amount} onChange={e => { setAmount(e.target.value); clearErr('amount', e.target.value) }} />
+          {fieldErrs.amount && <FError>{fieldErrs.amount}</FError>}
         </FGroup>
         <FGroup>
           <FLabel $req>Назначение</FLabel>
-          <FlInput placeholder="например: Закупка офисного оборудования" value={purpose} onChange={e => setPurpose(e.target.value)} />
+          <FlInput $err={!!fieldErrs.purpose} placeholder="например: Закупка офисного оборудования" value={purpose} onChange={e => { setPurpose(e.target.value); clearErr('purpose', e.target.value) }} />
+          {fieldErrs.purpose && <FError>{fieldErrs.purpose}</FError>}
         </FGroup>
         <FGroup>
           <FLabel $req>Срок исполнения</FLabel>
-          <DeadlineInput value={deadline} onChange={setDeadline} />
+          <DeadlineInput value={deadline} onChange={v => { setDeadline(v); clearErr('deadline', v) }} $err={!!fieldErrs.deadline} />
+          {fieldErrs.deadline && <FError>{fieldErrs.deadline}</FError>}
         </FGroup>
         <FGroup>
           <FLabel $req>Приоритет</FLabel>
@@ -923,7 +678,7 @@ function BasicManualFlow({ onReset }: { onReset: () => void }) {
           <Textarea placeholder="Необязательно" value={comment} onChange={e => setComment(e.target.value)} />
         </FGroup>
         <ActRow>
-          <PrimaryButton size="m" text="Проверить заявку" onClick={() => setShowReview(true)} />
+          <PrimaryButton size="m" text="Проверить заявку" onClick={handleReview} />
           <TertiaryButton size="m" text="Назад" onClick={onReset} />
         </ActRow>
       </Card>
@@ -975,9 +730,11 @@ const FIELD_SOURCE: Record<string, string> = {
 
 interface StandardFolderFlowProps {
   initialFiles: MockFile[]
+  initialValues?: ManualFormValues
+  onValuesChange?: (v: ManualFormValues) => void
 }
 
-function StandardFolderFlow({ initialFiles }: StandardFolderFlowProps) {
+function StandardFolderFlow({ initialFiles, initialValues, onValuesChange }: StandardFolderFlowProps) {
   const navigate = useNavigate()
   const { mode } = useUserMode()
   const [pickerOpen, setPickerOpen] = useState(false)
@@ -986,16 +743,27 @@ function StandardFolderFlow({ initialFiles }: StandardFolderFlowProps) {
 
   const [unlocked, setUnlocked]   = useState<Set<string>>(new Set())
 
-  const emptyVals = { supplier: '', inn: '', amount: '', purpose: '' }
+  const emptyVals = {
+    supplier: initialValues?.supplier ?? '',
+    inn:      initialValues?.inn      ?? '',
+    amount:   initialValues?.amount   ?? '',
+    purpose:  initialValues?.purpose  ?? '',
+  }
   const filledVals = { supplier: FOLDER_REQ.supplier, inn: FOLDER_REQ.inn, amount: FOLDER_REQ.amount, purpose: FOLDER_REQ.purpose }
   const [editVals, setEditVals]   = useState(initialFiles.length > 0 ? filledVals : emptyVals)
-  const [deadline, setDeadline]   = useState('')
-  const [priority, setPriority]   = useState<Priority>('Обычный')
-  const [comment, setComment]     = useState('')
+  const [deadline, setDeadline]   = useState(initialValues?.deadline ?? '')
+  const [priority, setPriority]   = useState<Priority>(initialValues?.priority ?? 'Обычный')
+  const [comment, setComment]     = useState(initialValues?.comment ?? '')
   const [preview, setPreview]     = useState(false)
   const [done, setDone]           = useState(false)
   const [deadlineErr, setDeadlineErr] = useState('')
   const [fieldErrs, setFieldErrs] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    if (!onValuesChange) return
+    onValuesChange({ supplier: editVals.supplier, inn: editVals.inn, amount: editVals.amount, purpose: editVals.purpose, deadline, priority, comment })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editVals.supplier, editVals.inn, editVals.amount, editVals.purpose, deadline, priority, comment])
 
   function handleNext() {
     const errs: Record<string, string> = {}
@@ -1302,12 +1070,16 @@ export function TaskScreen() {
   // Entry chooser state (only used when isFolder is false)
   const [rootEntry, setRootEntry] = useState<RootEntry>(null)
 
-  // Reset form state on every navigation to this screen (including re-click of active nav item)
+  // Shared form values — preserved across mode switches
+  const [formValues, setFormValues] = useState<ManualFormValues>({
+    supplier: '', inn: '', amount: '', purpose: '',
+    deadline: '', priority: 'Обычный', comment: '',
+  })
+  const handleFormChange = useCallback((v: ManualFormValues) => setFormValues(v), [])
+
+  // Reset entry chooser on every navigation to this screen (including re-click of active nav item)
   useEffect(() => {
     setRootEntry(null)
-    setForm({ service: '', purpose: '', duration: '', comment: '' })
-    setErrors({})
-    setTaskState('filling')
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.key])
 
@@ -1321,64 +1093,6 @@ export function TaskScreen() {
     })
   }, [openObject])
 
-  const [form, setForm] = useState<FormData>({ service: '', purpose: '', duration: '', comment: '' })
-  const [errors, setErrors] = useState<FormErrors>({})
-  const [taskState, setTaskState] = useState<TaskState>('filling')
-  const [requests, setRequests] = useState<MockRequest[]>([...mockRequests])
-
-  function update(u: Partial<FormData>) {
-    setForm(prev => ({ ...prev, ...u }))
-    setErrors(prev => {
-      if (!hasErrors(prev)) return prev
-      const next: FormErrors = { ...prev }
-      if ('service' in u && u.service) delete next.service
-      if ('purpose' in u && (u.purpose ?? '').trim()) delete next.purpose
-      if ('duration' in u && u.duration) delete next.duration
-      return next
-    })
-  }
-
-  function doReview() {
-    const e = validate(form)
-    if (hasErrors(e)) { setErrors(e); setTaskState('error') }
-    else { setErrors({}); setTaskState('review') }
-  }
-
-  function doSubmit() {
-    const e = validate(form)
-    if (hasErrors(e)) { setErrors(e); setTaskState('error') }
-    else {
-      const newReq: MockRequest = {
-        id: REQUEST_NUMBER,
-        title: `Доступ к ${form.service}`,
-        status: 'sent',
-        date: 'Сегодня',
-      }
-      setRequests(prev => [newReq, ...prev])
-      setErrors({})
-      setTaskState('success')
-      track('task-completed', { mode, method: 'form' })
-    }
-  }
-
-  function doEdit() { setTaskState('filling') }
-
-  function doReset() {
-    setForm({ service: '', purpose: '', duration: '', comment: '' })
-    setErrors({})
-    setTaskState('filling')
-
-  }
-
-  const stdProps: StdProps = {
-    form, update, errors, taskState, requests,
-    onReview: doReview,
-    onSubmit: doSubmit,
-    onEdit: doEdit,
-    onReset: doReset,
-    onGoToMain: () => navigate('/main'),
-  }
-
   // source=folder: use files from that folder param directly
   if (isFolder) {
     const folderFiles = folderParam ? mockFiles.filter(f => f.folderId === folderParam) : []
@@ -1391,9 +1105,9 @@ export function TaskScreen() {
     )
   }
 
-  // Standard/Expert: skip entry chooser, go directly to form
-  if ((mode === 'standard' || mode === 'expert') && rootEntry === null) {
-    return <StandardFolderFlow initialFiles={[]} />
+  // Standard/Expert: always show the combined form, regardless of what basic sub-flow was active
+  if (mode === 'standard' || mode === 'expert') {
+    return <StandardFolderFlow initialFiles={[]} initialValues={formValues} onValuesChange={handleFormChange} />
   }
 
   // Entry chooser (no source=folder param)
@@ -1424,11 +1138,6 @@ export function TaskScreen() {
     return <BasicFolderFlow initialFiles={[]} onReset={() => setRootEntry(null)} />
   }
 
-  // Manual
-  return (
-    <>
-      {mode === 'basic'    && <BasicManualFlow onReset={() => setRootEntry(null)} />}
-      {(mode === 'standard' || mode === 'expert') && <StandardTaskView {...stdProps} />}
-    </>
-  )
+  // Manual (basic only — standard/expert go directly to the file-based flow above)
+  return <BasicManualFlow onReset={() => setRootEntry(null)} initialValues={formValues} onValuesChange={handleFormChange} />
 }

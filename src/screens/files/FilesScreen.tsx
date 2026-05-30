@@ -354,6 +354,7 @@ const BasicFolderCard = styled.div<{ $active?: boolean }>`
   cursor: pointer;
   transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
   &:hover {
+    background: ${({ $active }) => ($active ? '#eef2ff' : '#edf3ff')};
     border-color: #a5b4fc;
     box-shadow: 0 2px 8px rgba(99, 102, 241, 0.08);
   }
@@ -397,7 +398,7 @@ const BasicFolderTreeRoot = styled.div<{ $active?: boolean }>`
   background: ${({ $active }) => ($active ? '#eef2ff' : 'transparent')};
   cursor: pointer;
   transition: background 0.1s;
-  &:hover { background: #f5f3ff; }
+  &:hover { background: ${({ $active }) => ($active ? '#eef2ff' : '#edf3ff')}; }
 `
 
 const BasicFolderTreeSub = styled.div<{ $active?: boolean }>`
@@ -410,7 +411,7 @@ const BasicFolderTreeSub = styled.div<{ $active?: boolean }>`
   background: ${({ $active }) => ($active ? '#eef2ff' : 'transparent')};
   cursor: pointer;
   transition: background 0.1s;
-  &:hover { background: #f5f3ff; }
+  &:hover { background: ${({ $active }) => ($active ? '#eef2ff' : '#edf3ff')}; }
 `
 
 const BasicFileList = styled.div`
@@ -427,6 +428,8 @@ const BasicFileRow = styled.div`
   display: flex;
   align-items: center;
   gap: 0.875rem;
+  transition: background 0.12s, border-color 0.12s;
+  &:hover { background: #edf3ff; border-color: #c7d2fe; }
 `
 
 const BasicFileDocIcon = styled.div`
@@ -693,7 +696,7 @@ const StdTreeFolderBtn = styled.button<{ $active: boolean }>`
   cursor: pointer;
   transition: background 0.1s;
   span:first-of-type { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  &:hover { background: ${({ $active }) => ($active ? '#eef2ff' : '#f8f9fa')}; }
+  &:hover { background: ${({ $active }) => ($active ? '#eef2ff' : '#edf3ff')}; }
 `
 
 const StdTreeSubBtn = styled.button<{ $active: boolean }>`
@@ -711,7 +714,7 @@ const StdTreeSubBtn = styled.button<{ $active: boolean }>`
   cursor: pointer;
   transition: background 0.1s;
   span:first-of-type { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  &:hover { background: ${({ $active }) => ($active ? '#eef2ff' : '#f8f9fa')}; }
+  &:hover { background: ${({ $active }) => ($active ? '#eef2ff' : '#edf3ff')}; }
 `
 
 const StdTreeCount = styled.span`
@@ -1052,7 +1055,7 @@ const ExpAllFilesBtn = styled.button<{ $active: boolean }>`
   cursor: pointer;
   border-bottom: 1px solid #f3f4f6;
   transition: background 0.1s;
-  &:hover { background: ${({ $active }) => ($active ? '#eef2ff' : '#f8f9fa')}; }
+  &:hover { background: ${({ $active }) => ($active ? '#eef2ff' : '#edf3ff')}; }
 `
 
 const ExpTreeRootRow = styled.div`
@@ -1093,7 +1096,7 @@ const ExpTreeFolderBtn = styled.button<{ $active: boolean }>`
   text-align: left;
   cursor: pointer;
   transition: background 0.1s;
-  &:hover { background: ${({ $active }) => ($active ? '#eef2ff' : '#f8f9fa')}; }
+  &:hover { background: ${({ $active }) => ($active ? '#eef2ff' : '#edf3ff')}; }
 `
 
 const ExpTreeSubRow = styled.button<{ $active: boolean }>`
@@ -1111,7 +1114,7 @@ const ExpTreeSubRow = styled.button<{ $active: boolean }>`
   text-align: left;
   cursor: pointer;
   transition: background 0.1s;
-  &:hover { background: ${({ $active }) => ($active ? '#eef2ff' : '#f8f9fa')}; }
+  &:hover { background: ${({ $active }) => ($active ? '#eef2ff' : '#edf3ff')}; }
 `
 
 const ExpTreeFolderLabel = styled.span`

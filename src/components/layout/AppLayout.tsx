@@ -142,11 +142,12 @@ const GlobalStyle = createGlobalStyle`
   h1, h2, h3, h4, h5, h6, p { margin: 0; font-family: inherit; }
   button, input, textarea, select { font-family: inherit; }
 
-  /* Видимый фокус только при навигации с клавиатуры (мышь не подсвечивает) */
-  :where(a, button, input, textarea, select, [tabindex], [role="button"], [role="option"], [role="tab"]):focus {
+  /* Видимый фокус только при навигации с клавиатуры (мышь не подсвечивает).
+     Нативные поля (input/textarea/select) исключены — у них собственный индикатор фокуса. */
+  :where(a, button, [tabindex], [role="button"], [role="option"], [role="tab"]):focus {
     outline: none;
   }
-  :where(a, button, input, textarea, select, [tabindex], [role="button"], [role="option"], [role="tab"]):focus-visible {
+  :where(a, button, [tabindex], [role="button"], [role="option"], [role="tab"]):focus-visible {
     outline: 2px solid #4f46e5;
     outline-offset: 2px;
     border-radius: 4px;
