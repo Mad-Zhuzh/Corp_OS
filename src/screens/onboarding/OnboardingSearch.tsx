@@ -1,9 +1,10 @@
-import { useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import styled from 'styled-components'
 import { useNavigate } from 'react-router-dom'
 import { useTourHighlight } from '../../context/TourHighlightContext'
 import { useUserMode } from '../../context/UserModeContext'
 import { track } from '../../utils/analytics'
+import { PrimaryButton } from '../../components/shared/buttons'
 
 const Root = styled.div`
   display: flex;
@@ -71,15 +72,78 @@ const SkipLink = styled.button`
   &:hover { color: #6b7280; }
 `
 
+const SuccessCard = styled.div`
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+`
+
+const SuccessTitle = styled.div`
+  font-size: 1rem;
+  font-weight: 700;
+  color: #059669;
+  line-height: 1.3;
+`
+
+const SuccessText = styled.div`
+  font-size: 0.875rem;
+  color: #374151;
+  line-height: 1.5;
+  margin-bottom: 0.25rem;
+`
+
 export function OnboardingSearch() {
   const { setZone } = useTourHighlight()
   const { mode } = useUserMode()
   const navigate = useNavigate()
 
+  const [docOpened, setDocOpened] = useState(
+    () => localStorage.getItem('corpOsSearchDone') === '1'
+  )
+
   useEffect(() => {
     setZone('search')
     return () => setZone(null)
   }, [setZone])
+
+  // detect flag set by AppLayout in another tab (edge-case) or programmatically
+  useEffect(() => {
+    if (docOpened) return
+    function onStorage(e: StorageEvent) {
+      if (e.key === 'corpOsSearchDone' && e.newValue === '1') setDocOpened(true)
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [docOpened])
+
+  // poll once on focus — catches the case where user navigated to /document
+  // and pressed Back (flag already in localStorage when component re-mounts)
+  useEffect(() => {
+    if (docOpened) return
+    function onFocus() {
+      if (localStorage.getItem('corpOsSearchDone') === '1') setDocOpened(true)
+    }
+    window.addEventListener('focus', onFocus)
+    return () => window.removeEventListener('focus', onFocus)
+  }, [docOpened])
+
+  function finish() {
+    track('onboarding-completed', { step: 'search', mode })
+    localStorage.setItem('corpOsOnboarded', '1')
+    localStorage.removeItem('corpOsSearchDone')
+    navigate('/main')
+  }
+
+  function skip() {
+    track('onboarding-skipped', { step: 'search', mode })
+    localStorage.setItem('corpOsOnboarded', '1')
+    localStorage.removeItem('corpOsSearchDone')
+    navigate('/main')
+  }
 
   return (
     <Root>
@@ -87,16 +151,29 @@ export function OnboardingSearch() {
         <StepLabel>Первое действие</StepLabel>
       </div>
       <Title>Попробуйте поиск</Title>
-      <TaskCard>
-        <TaskLabel>Задание</TaskLabel>
-        <TaskText>Найдите документ «Шаблон заявления на отпуск»</TaskText>
-        <TaskHint>
-          Введите название или несколько слов из него в строку поиска вверху страницы и нажмите Enter.
-        </TaskHint>
-      </TaskCard>
-      <SkipLink onClick={() => { track('onboarding-skipped', { step: 'search', mode }); localStorage.setItem('corpOsOnboarded', '1'); navigate('/main') }}>
-        Пропустить задание — перейти к работе
-      </SkipLink>
+
+      {docOpened ? (
+        <SuccessCard>
+          <SuccessTitle>Отлично! Вы нашли нужный документ.</SuccessTitle>
+          <SuccessText>
+            Теперь вы знаете, как искать информацию в CorpOS.
+          </SuccessText>
+          <PrimaryButton size="m" text="Перейти к работе" onClick={finish} />
+        </SuccessCard>
+      ) : (
+        <>
+          <TaskCard>
+            <TaskLabel>Задание</TaskLabel>
+            <TaskText>Найдите документ «Шаблон заявления на отпуск»</TaskText>
+            <TaskHint>
+              Введите название или несколько слов из него в строку поиска вверху страницы и нажмите Enter.
+            </TaskHint>
+          </TaskCard>
+          <SkipLink onClick={skip}>
+            Пропустить задание — перейти к работе
+          </SkipLink>
+        </>
+      )}
     </Root>
   )
 }

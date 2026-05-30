@@ -10,7 +10,6 @@ import { TaskScreen } from './screens/task/TaskScreen'
 import { StubScreen } from './screens/stub/StubScreen'
 import { FilesScreen } from './screens/files/FilesScreen'
 import { HelpScreen } from './screens/help/HelpScreen'
-import { OnboardingSearch } from './screens/onboarding/OnboardingSearch'
 import { DocumentScreen } from './screens/document/DocumentScreen'
 
 function RootRedirect() {
@@ -42,7 +41,6 @@ function App() {
         <Route path="/settings" element={<StubScreen section="Настройки" />} />
         <Route path="/mail" element={<StubScreen section="Почта" />} />
         <Route path="/help" element={<HelpScreen />} />
-        <Route path="/onboarding/search" element={<OnboardingSearch />} />
       </Route>
     </Routes>
   )

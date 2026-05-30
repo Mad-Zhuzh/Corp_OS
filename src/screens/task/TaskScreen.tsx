@@ -1054,6 +1054,88 @@ function ExpertFolderFlow() {
   )
 }
 
+// ─── Expert entry chooser ─────────────────────────────────────────────────────
+
+const ExpertEntryHint = styled.div`
+  font-size: 0.8125rem;
+  color: ${c.textTer};
+  margin-top: 0.75rem;
+  line-height: 1.5;
+`
+
+function ExpertTaskEntry({ onManual }: { onManual: () => void }) {
+  const navigate = useNavigate()
+  return (
+    <ExpFlRoot>
+      <ExpFlTitle>Создать заявку</ExpFlTitle>
+      <ExpFlBtnRow>
+        <PrimaryButton size="s" text="Из файлов" onClick={() => navigate('/documents')} />
+        <SecondaryButton size="s" text="Вручную" onClick={onManual} />
+      </ExpFlBtnRow>
+      <ExpertEntryHint>
+        Быстрый маршрут: выберите файлы в разделе «Файлы и документы» → «Добавить в заявку»
+      </ExpertEntryHint>
+    </ExpFlRoot>
+  )
+}
+
+// ─── Review screen (stub) ─────────────────────────────────────────────────────
+
+const ReviewStatusBadge = styled.div`
+  display: inline-block;
+  padding: 0.25rem 0.875rem;
+  border-radius: 20px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  background: ${c.pendingBg};
+  color: ${c.pendingText};
+  border: 1px solid ${c.pendingBorder};
+  margin-bottom: 1.25rem;
+`
+
+const ReviewDataCard = styled.div`
+  background: ${c.cardBg};
+  border: 1px solid ${c.border};
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+`
+
+function TaskReviewScreen() {
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const reviewId = searchParams.get('review') ?? '1041'
+
+  function approve() {
+    navigate('/main', { state: { pendingToast: `Заявка #${reviewId} согласована` } })
+  }
+  function reject() {
+    navigate('/main', { state: { pendingToast: `Заявка #${reviewId} отклонена` } })
+  }
+
+  return (
+    <FlRoot>
+      <PageTitle style={{ marginBottom: '0.5rem' }}>Заявка #{reviewId}</PageTitle>
+      <ReviewStatusBadge>Ожидает согласования</ReviewStatusBadge>
+
+      <ReviewDataCard>
+        <FlDataRow><FlDataKey>Инициатор</FlDataKey><FlDataVal>Иванова С.</FlDataVal></FlDataRow>
+        <FlDataRow><FlDataKey>Поставщик</FlDataKey><FlDataVal>ООО «Рога и Копыта»</FlDataVal></FlDataRow>
+        <FlDataRow><FlDataKey>Сумма</FlDataKey><FlDataVal>485 000 ₽</FlDataVal></FlDataRow>
+        <FlDataRow><FlDataKey>Назначение</FlDataKey><FlDataVal>Закупка офисного оборудования</FlDataVal></FlDataRow>
+        <FlDataRow><FlDataKey>Срок</FlDataKey><FlDataVal>30 рабочих дней</FlDataVal></FlDataRow>
+        <FlDataRow><FlDataKey>Создана</FlDataKey><FlDataVal>28.05.2026</FlDataVal></FlDataRow>
+      </ReviewDataCard>
+
+      <ActRow>
+        <PrimaryButton size="m" text="Согласовать" onClick={approve} />
+        <SecondaryButton size="m" text="Отклонить" onClick={reject} />
+        <TertiaryButton size="m" text="Назад" onClick={() => navigate(-1)} />
+      </ActRow>
+    </FlRoot>
+  )
+}
+
 // ─── Root ─────────────────────────────────────────────────────────────────────
 
 type RootEntry = null | 'files' | 'manual'
@@ -1066,6 +1148,7 @@ export function TaskScreen() {
   const [searchParams] = useSearchParams()
   const isFolder = searchParams.get('source') === 'folder'
   const folderParam = searchParams.get('folder')
+  const reviewId = searchParams.get('review')
 
   // Entry chooser state (only used when isFolder is false)
   const [rootEntry, setRootEntry] = useState<RootEntry>(null)
@@ -1093,6 +1176,11 @@ export function TaskScreen() {
     })
   }, [openObject])
 
+  // ?review=: show request review stub, don't touch creation flow
+  if (reviewId) {
+    return <TaskReviewScreen />
+  }
+
   // source=folder: use files from that folder param directly
   if (isFolder) {
     const folderFiles = folderParam ? mockFiles.filter(f => f.folderId === folderParam) : []
@@ -1105,9 +1193,17 @@ export function TaskScreen() {
     )
   }
 
-  // Standard/Expert: always show the combined form, regardless of what basic sub-flow was active
-  if (mode === 'standard' || mode === 'expert') {
+  // Standard: skip entry, go directly to combined form
+  if (mode === 'standard') {
     return <StandardFolderFlow initialFiles={[]} initialValues={formValues} onValuesChange={handleFormChange} />
+  }
+
+  // Expert: entry chooser → manual form (folder flow only via ?source=folder)
+  if (mode === 'expert') {
+    if (rootEntry === 'manual') {
+      return <StandardFolderFlow initialFiles={[]} initialValues={formValues} onValuesChange={handleFormChange} />
+    }
+    return <ExpertTaskEntry onManual={() => setRootEntry('manual')} />
   }
 
   // Entry chooser (no source=folder param)

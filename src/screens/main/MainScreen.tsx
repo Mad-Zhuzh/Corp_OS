@@ -255,7 +255,9 @@ function BasicView({ isEditMode, showToast }: ViewProps) {
     : unreadCount > 0
       ? `У вас ${unreadCount} непрочитанных уведомления`
       : 'Вы недавно работали с документами'
-  const hintRoute = pendingRequest ? '/task' : '/documents'
+  const hintRoute = pendingRequest
+    ? `/task?review=${String(pendingRequest.id).replace('#', '')}`
+    : '/documents'
   const hintAction = pendingRequest ? 'Проверить' : 'Открыть'
 
   return (
@@ -560,7 +562,7 @@ function StandardView({ isEditMode, showToast }: ViewProps) {
               </StdCardHeader>
               <StdTaskList>
                 {tasks.map((t: Task) => (
-                  <StdTaskRow key={t.id}>
+                  <StdTaskRow key={t.id} onClick={() => navigate('/tasks')}>
                     <StdTaskDot $priority={t.priority} />
                     <StdTaskBody>
                       <StdTaskTitle>{t.title}</StdTaskTitle>

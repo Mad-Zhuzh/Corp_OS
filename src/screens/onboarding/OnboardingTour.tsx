@@ -193,7 +193,7 @@ function BasicTour({ onDone, onChangeMode }: TourProps) {
       </BasicStepList>
       <ActionRow>
         <BtnRow>
-          <PrimaryButton size="m" text="Попробовать поиск" onClick={onDone} />
+          <PrimaryButton size="m" text="Перейти к работе" onClick={onDone} />
           <SecondaryButton size="m" text="Пропустить" onClick={handleSkip} />
         </BtnRow>
         <ChangeModeLink onClick={onChangeMode}>Изменить режим</ChangeModeLink>
@@ -326,7 +326,7 @@ function StandardTour({ onChangeMode }: TourProps) {
       </StandardStepList>
       <ActionRow>
         <BtnRow>
-          <PrimaryButton size="m" text="Попробовать поиск" onClick={() => navigate('/onboarding/search')} />
+          <PrimaryButton size="m" text="Перейти к работе" onClick={() => { localStorage.setItem('corpOsOnboarded', '1'); navigate('/main') }} />
           <SecondaryButton size="m" text="Пропустить" onClick={handleSkip} />
         </BtnRow>
         <ChangeModeLink onClick={onChangeMode}>Изменить режим</ChangeModeLink>
@@ -435,7 +435,7 @@ export function OnboardingTour() {
   const { mode } = useUserMode()
   const navigate = useNavigate()
 
-  const handleDoneBasic = () => navigate('/onboarding/search')
+  const handleDoneBasic = () => { localStorage.setItem('corpOsOnboarded', '1'); navigate('/main') }
   const handleDone = () => { localStorage.setItem('corpOsOnboarded', '1'); navigate('/main') }
   const handleChangeMode = () => navigate('/onboarding/mode')
 
