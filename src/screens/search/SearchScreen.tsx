@@ -3,6 +3,7 @@ import styled from 'styled-components'
 import { Button } from '@salutejs/plasma-web'
 import { track } from '../../utils/analytics'
 import { pluralResults } from '../../utils/plural'
+import { clickable } from '../../utils/a11y'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { PrimaryButton, SecondaryButton } from '../../components/shared/buttons'
 import { useUserMode } from '../../context/UserModeContext'
@@ -203,7 +204,7 @@ const FileResultsList = styled.div`
 function FileRow({ file, onClick, showOpenBtn }: { file: MockFile; onClick: () => void; showOpenBtn?: boolean }) {
   const s = TYPE_STYLE[file.type] ?? TYPE_STYLE.pdf
   return (
-    <FileResultRow onClick={showOpenBtn ? undefined : onClick} style={showOpenBtn ? { cursor: 'default' } : undefined}>
+    <FileResultRow {...(showOpenBtn ? { style: { cursor: 'default' } } : clickable(onClick))}>
       <FileIconBadge $bg={s.bg} $color={s.color}>{file.type.toUpperCase()}</FileIconBadge>
       <FileResultName>{file.name}</FileResultName>
       <FileResultMeta>{file.date}</FileResultMeta>

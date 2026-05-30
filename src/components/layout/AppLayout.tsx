@@ -141,6 +141,16 @@ const GlobalStyle = createGlobalStyle`
   }
   h1, h2, h3, h4, h5, h6, p { margin: 0; font-family: inherit; }
   button, input, textarea, select { font-family: inherit; }
+
+  /* Видимый фокус только при навигации с клавиатуры (мышь не подсвечивает) */
+  :where(a, button, input, textarea, select, [tabindex], [role="button"], [role="option"], [role="tab"]):focus {
+    outline: none;
+  }
+  :where(a, button, input, textarea, select, [tabindex], [role="button"], [role="option"], [role="tab"]):focus-visible {
+    outline: 2px solid #4f46e5;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
 `
 
 // ─── Shell structure ──────────────────────────────────────────────────────────
@@ -787,22 +797,44 @@ const EditModeDoneBtn = styled.button`
 
 // ─── Toast ────────────────────────────────────────────────────────────────────
 
-const AppToast = styled.div<{ $visible: boolean }>`
+// Длительность показа тоста по режиму: базовый — дольше (больше времени прочитать), экспертный — короче
+const TOAST_MS: Record<UserMode, number> = { basic: 5200, standard: 3800, expert: 2400 }
+
+const AppToast = styled.div<{ $visible: boolean; $mode: UserMode }>`
   position: fixed;
   bottom: 1.5rem;
   left: 50%;
   transform: translateX(-50%);
   background: #1a1a1a;
   color: #ffffff;
-  font-size: 0.875rem;
-  padding: 0.625rem 1.25rem;
-  border-radius: 10px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
-  white-space: nowrap;
   z-index: 500;
   pointer-events: none;
+  text-align: center;
   opacity: ${({ $visible }) => ($visible ? 1 : 0)};
   transition: opacity 0.25s ease;
+  ${({ $mode }) => {
+    if ($mode === 'basic') return css`
+      font-size: 0.9375rem;
+      line-height: 1.5;
+      padding: 0.875rem 1.5rem;
+      border-radius: 12px;
+      max-width: 440px;
+      white-space: normal;
+    `
+    if ($mode === 'expert') return css`
+      font-size: 0.8125rem;
+      padding: 0.4rem 0.875rem;
+      border-radius: 8px;
+      white-space: nowrap;
+    `
+    return css`
+      font-size: 0.875rem;
+      padding: 0.625rem 1.25rem;
+      border-radius: 10px;
+      white-space: nowrap;
+    `
+  }}
 `
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -821,6 +853,9 @@ export function AppLayout() {
   const modeRef = useRef<HTMLDivElement>(null)
   const searchBoxRef = useRef<HTMLDivElement>(null)
   const [toastMsg, setToastMsg] = useState('')
+  const [toastVisible, setToastVisible] = useState(false)
+  const toastHideRef = useRef<ReturnType<typeof setTimeout>>()
+  const toastClearRef = useRef<ReturnType<typeof setTimeout>>()
   const processedKey = useRef('')
   const [isEditMode, setIsEditMode] = useState(false)
   const [editMenuOpen, setEditMenuOpen] = useState(false)
@@ -853,8 +888,7 @@ export function AppLayout() {
     const state = location.state as { pendingToast?: string } | null
     if (state?.pendingToast && processedKey.current !== location.key) {
       processedKey.current = location.key
-      setToastMsg(state.pendingToast)
-      setTimeout(() => setToastMsg(''), 3800)
+      showToast(state.pendingToast)
     }
   }, [location.key])
 
@@ -912,6 +946,19 @@ export function AppLayout() {
     return () => document.removeEventListener('mousedown', handler)
   }, [editMenuOpen])
 
+  // close any open dropdown/menu on Escape (клавиатурная навигация)
+  useEffect(() => {
+    function handler(e: KeyboardEvent) {
+      if (e.key === 'Escape' || e.key === 'Esc') {
+        setModeOpen(false)
+        setSearchOpen(false)
+        setEditMenuOpen(false)
+      }
+    }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [])
+
   // reset edit mode when leaving /main
   useEffect(() => {
     if (location.pathname !== '/main') {
@@ -938,8 +985,15 @@ export function AppLayout() {
   const activeNavId = getActiveNavId()
 
   function showToast(msg: string) {
+    clearTimeout(toastHideRef.current)
+    clearTimeout(toastClearRef.current)
     setToastMsg(msg)
-    setTimeout(() => setToastMsg(''), 3800)
+    setToastVisible(true)
+    toastHideRef.current = setTimeout(() => {
+      setToastVisible(false)
+      // текст убираем только после завершения анимации затухания (0.25s)
+      toastClearRef.current = setTimeout(() => setToastMsg(''), 280)
+    }, TOAST_MS[mode])
   }
 
   function handleEditToggle() {
@@ -1230,7 +1284,7 @@ export function AppLayout() {
 
         </Body>
 
-        <AppToast $visible={toastMsg.length > 0}>{toastMsg}</AppToast>
+        <AppToast $visible={toastVisible} $mode={mode}>{toastMsg}</AppToast>
 
       </ShellRoot>
     </OpenObjectsProvider>

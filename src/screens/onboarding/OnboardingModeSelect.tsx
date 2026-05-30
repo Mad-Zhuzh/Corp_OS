@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { PrimaryButton, TertiaryButton } from '../../components/shared/buttons'
 import { useUserMode, type UserMode } from '../../context/UserModeContext'
 import { track } from '../../utils/analytics'
+import { clickable } from '../../utils/a11y'
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
@@ -546,7 +547,7 @@ export function OnboardingModeSelect() {
             <ModeCard
               key={opt.id}
               $active={isActive}
-              onClick={() => { setMode(opt.id); setModeTouched(true); track('onboarding-mode-selected', { mode: opt.id }) }}
+              {...clickable(() => { setMode(opt.id); setModeTouched(true); track('onboarding-mode-selected', { mode: opt.id }) })}
             >
               {isRecommended && <RecommendBadge>Рекомендовано</RecommendBadge>}
 
