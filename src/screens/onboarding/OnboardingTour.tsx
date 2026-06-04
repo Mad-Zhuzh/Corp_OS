@@ -158,14 +158,6 @@ interface TourProps {
 
 function BasicTour({ onDone, onChangeMode }: TourProps) {
   const { zone, setZone } = useTourHighlight()
-  const { mode } = useUserMode()
-  const navigate = useNavigate()
-
-  function handleSkip() {
-    track('onboarding-skipped', { step: 'tour', mode })
-    localStorage.setItem('corpOsOnboarded', '1')
-    navigate('/main')
-  }
 
   return (
     <>
@@ -194,7 +186,6 @@ function BasicTour({ onDone, onChangeMode }: TourProps) {
       <ActionRow>
         <BtnRow>
           <PrimaryButton size="m" text="Перейти к работе" onClick={onDone} />
-          <SecondaryButton size="m" text="Пропустить" onClick={handleSkip} />
         </BtnRow>
         <ChangeModeLink onClick={onChangeMode}>Изменить режим</ChangeModeLink>
       </ActionRow>
@@ -283,14 +274,7 @@ const STANDARD_STEPS: StandardStepDef[] = [
 
 function StandardTour({ onChangeMode }: TourProps) {
   const { zone, setZone } = useTourHighlight()
-  const { mode } = useUserMode()
   const navigate = useNavigate()
-
-  function handleSkip() {
-    track('onboarding-skipped', { step: 'tour', mode })
-    localStorage.setItem('corpOsOnboarded', '1')
-    navigate('/main')
-  }
 
   return (
     <>
@@ -327,7 +311,6 @@ function StandardTour({ onChangeMode }: TourProps) {
       <ActionRow>
         <BtnRow>
           <PrimaryButton size="m" text="Перейти к работе" onClick={() => { localStorage.setItem('corpOsOnboarded', '1'); navigate('/main') }} />
-          <SecondaryButton size="m" text="Пропустить" onClick={handleSkip} />
         </BtnRow>
         <ChangeModeLink onClick={onChangeMode}>Изменить режим</ChangeModeLink>
       </ActionRow>
