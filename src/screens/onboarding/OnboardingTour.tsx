@@ -11,10 +11,9 @@ import type { FC } from 'react'
 import type { IconProps } from '@salutejs/plasma-icons'
 
 import { useNavigate } from 'react-router-dom'
-import { PrimaryButton, SecondaryButton } from '../../components/shared/buttons'
+import { PrimaryButton } from '../../components/shared/buttons'
 import { useUserMode } from '../../context/UserModeContext'
 import { useTourHighlight, type HighlightZone } from '../../context/TourHighlightContext'
-import { track } from '../../utils/analytics'
 
 // ─── Shared styles ────────────────────────────────────────────────────────────
 
