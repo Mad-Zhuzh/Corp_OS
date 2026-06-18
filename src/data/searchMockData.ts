@@ -1,4 +1,4 @@
-import { mockFiles, type MockFile } from './filesMockData'
+import { mockFiles, mockFolders, type MockFile, type MockFolder } from './filesMockData'
 
 // ─── Single source document ───────────────────────────────────────────────────
 
@@ -65,7 +65,16 @@ export function getFileResults(query: string): MockFile[] {
   return results
 }
 
-export type { MockFile }
+// Поиск папок по названию (нечувствителен к регистру).
+// Оператор «тип:» относится только к файлам — для него папки не ищем.
+export function getFolderResults(query: string): MockFolder[] {
+  const { typeFilter, term } = parseQuery(query)
+  if (typeFilter) return []
+  if (term.length < 2) return []
+  return mockFolders.filter(f => f.label.toLowerCase().includes(term.toLowerCase()))
+}
+
+export type { MockFile, MockFolder }
 
 export const DD_ACTIONS: Record<'standard' | 'expert', { label: string; nav: string }[]> = {
   standard: [

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import styled from 'styled-components'
 import { useNavigate } from 'react-router-dom'
+import { IconFolderOutline } from '@salutejs/plasma-icons'
 import { track } from '../../utils/analytics'
 import { PrimaryButton } from '../../components/shared/buttons'
 import { useUserMode } from '../../context/UserModeContext'
@@ -14,7 +15,9 @@ import {
   isExpertMatch,
   isOperatorPrefix,
   getFileResults,
+  getFolderResults,
   type MockFile,
+  type MockFolder,
 } from '../../data/searchMockData'
 import type { SearchResult } from '../../data/mockData'
 
@@ -300,6 +303,46 @@ function ExpertFileRow({ file, onSelect, active }: { file: MockFile; onSelect: (
   )
 }
 
+// ─── Folder result rows (shared) ──────────────────────────────────────────────
+
+const DDFolderIcon = styled.div`
+  width: 24px;
+  height: 24px;
+  background: #eef2ff;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+`
+
+const DDFolderTag = styled.span`
+  font-size: 0.75rem;
+  color: #9ca3af;
+  font-style: italic;
+  white-space: nowrap;
+`
+
+function FolderRow({ folder, onSelect }: { folder: MockFolder; onSelect: () => void }) {
+  return (
+    <DDRowBtn onClick={onSelect}>
+      <DDFolderIcon><IconFolderOutline size="xs" color="#4f46e5" /></DDFolderIcon>
+      <DDRowTitle>{folder.label}</DDRowTitle>
+      <DDFolderTag>Папка</DDFolderTag>
+    </DDRowBtn>
+  )
+}
+
+function ExpertFolderRow({ folder, onSelect, active }: { folder: MockFolder; onSelect: () => void; active?: boolean }) {
+  return (
+    <DDExpertRow $active={active} onClick={onSelect}>
+      <DDFolderIcon><IconFolderOutline size="xs" color="#4f46e5" /></DDFolderIcon>
+      <DDExpertTitle>{folder.label}</DDExpertTitle>
+      <DDFolderTag>Папка</DDFolderTag>
+    </DDExpertRow>
+  )
+}
+
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 interface SearchDropdownProps {
@@ -357,6 +400,12 @@ export function SearchDropdown({
     const handler = file.id === 'f3' ? () => navigate('/document') : onAllResults
     return () => { track('search-result-clicked', { mode, type: 'file' }); handler() }
   }
+  function folderSelectHandler(folder: MockFolder) {
+    return () => {
+      track('search-result-clicked', { mode, type: 'folder' })
+      navigate(`/documents?folder=${folder.id}`)
+    }
+  }
   const hasQuery = query.length > 0
   const recent = DD_RECENT[mode]
 
@@ -364,7 +413,8 @@ export function SearchDropdown({
   if (mode === 'basic') {
     const matched   = hasQuery && isSearchMatch(query)
     const fileRes   = hasQuery ? getFileResults(query) : []
-    const anyResult = matched || fileRes.length > 0
+    const folderRes = hasQuery ? getFolderResults(query) : []
+    const anyResult = matched || fileRes.length > 0 || folderRes.length > 0
     return (
       <DropdownBox>
         {!hasQuery && (
@@ -399,9 +449,19 @@ export function SearchDropdown({
           </>
         )}
 
-        {hasQuery && fileRes.length > 0 && (
+        {hasQuery && folderRes.length > 0 && (
           <DDSection>
             {matched && <DDDivider />}
+            <DDLabel>Папки</DDLabel>
+            {folderRes.map(f => (
+              <FolderRow key={f.id} folder={f} onSelect={folderSelectHandler(f)} />
+            ))}
+          </DDSection>
+        )}
+
+        {hasQuery && fileRes.length > 0 && (
+          <DDSection>
+            {(matched || folderRes.length > 0) && <DDDivider />}
             <DDLabel>Файлы</DDLabel>
             {fileRes.map(f => (
               <FileRow key={f.id} file={f} onSelect={fileSelectHandler(f)} />
@@ -426,7 +486,8 @@ export function SearchDropdown({
   if (mode === 'standard') {
     const matched   = hasQuery && isSearchMatch(query)
     const fileRes   = hasQuery ? getFileResults(query) : []
-    const anyResult = matched || fileRes.length > 0
+    const folderRes = hasQuery ? getFolderResults(query) : []
+    const anyResult = matched || fileRes.length > 0 || folderRes.length > 0
     const actions   = DD_ACTIONS.standard
     return (
       <DropdownBox>
@@ -456,6 +517,10 @@ export function SearchDropdown({
           </DDRowBtn>
         )}
 
+        {hasQuery && folderRes.length > 0 && folderRes.map(f => (
+          <FolderRow key={f.id} folder={f} onSelect={folderSelectHandler(f)} />
+        ))}
+
         {hasQuery && fileRes.length > 0 && fileRes.map(f => (
           <FileRow key={f.id} file={f} onSelect={fileSelectHandler(f)} />
         ))}
@@ -477,20 +542,23 @@ export function SearchDropdown({
   const isOpPrefix = hasQuery && isOperatorPrefix(query)
   const matched    = hasQuery && isExpertMatch(query)
   const fileRes    = hasQuery && !isOpPrefix ? getFileResults(query) : []
-  const anyResult  = matched || fileRes.length > 0
+  const folderRes  = hasQuery && !isOpPrefix ? getFolderResults(query) : []
+  const anyResult  = matched || fileRes.length > 0 || folderRes.length > 0
   const actions    = DD_ACTIONS.expert
 
   // Build keyboard-navigable items list and sync ref
   const kbItems: { action: () => void }[] = []
   if (hasQuery && !isOpPrefix) {
     if (matched) kbItems.push({ action: () => navigate(`/document?page=${SEARCH_DOC.page}&highlight=компенсаци`) })
+    folderRes.forEach(f => kbItems.push({ action: folderSelectHandler(f) }))
     fileRes.forEach(f => kbItems.push({ action: fileSelectHandler(f) }))
     kbItems.push({ action: onAllResults })
   }
   kbItemsRef.current = kbItems
 
-  const compDocKbIdx  = matched ? 0 : -1
-  const fileKbIdxBase = matched ? 1 : 0
+  const compDocKbIdx    = matched ? 0 : -1
+  const folderKbIdxBase = matched ? 1 : 0
+  const fileKbIdxBase   = folderKbIdxBase + folderRes.length
   const allResultsKbIdx = kbItems.length > 0 ? kbItems.length - 1 : -1
 
   return (
@@ -533,6 +601,15 @@ export function SearchDropdown({
           <DDEnterBadge>Enter</DDEnterBadge>
         </DDExpertRow>
       )}
+
+      {hasQuery && !isOpPrefix && folderRes.map((f, i) => (
+        <ExpertFolderRow
+          key={f.id}
+          folder={f}
+          onSelect={folderSelectHandler(f)}
+          active={activeIndex === folderKbIdxBase + i}
+        />
+      ))}
 
       {hasQuery && !isOpPrefix && fileRes.map((f, i) => (
         <ExpertFileRow

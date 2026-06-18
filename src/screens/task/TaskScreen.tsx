@@ -1,15 +1,16 @@
-import { useState, useEffect, useCallback, type MouseEvent } from 'react'
+import { useState, useEffect, useCallback, useMemo, type MouseEvent } from 'react'
 import { track } from '../../utils/analytics'
 import styled from 'styled-components'
 import { Button } from '@salutejs/plasma-web'
-import { IconFolderOutline, IconEditOutline, IconDoneCircleOutline } from '@salutejs/plasma-icons'
+import { IconFolderOutline, IconEditOutline, IconDoneCircleOutline, IconBlankDocOutline, IconClose } from '@salutejs/plasma-icons'
 import { PrimaryButton, SecondaryButton, TertiaryButton } from '../../components/shared/buttons'
-import { useNavigate, useSearchParams, useLocation } from 'react-router-dom'
+import { useNavigate, useSearchParams, useLocation, type NavigateFunction } from 'react-router-dom'
 import { useUserMode } from '../../context/UserModeContext'
 import { useOpenObjects } from '../../context/OpenObjectsContext'
 import { FilePicker } from '../../components/shared/FilePicker'
-import { mockFiles, type MockFile } from '../../data/filesMockData'
+import { mockFiles, getDocRouteByFileName, type MockFile } from '../../data/filesMockData'
 import { pluralAttachedFiles } from '../../utils/plural'
+import { loadTaskDraft, saveTaskDraft, clearTaskDraft } from '../../utils/taskDraft'
 
 // ─── Shared design tokens ─────────────────────────────────────────────────────
 
@@ -203,6 +204,19 @@ const EXT_COLOR: Record<string, { bg: string; fg: string }> = {
   docx: { bg: '#dbeafe', fg: '#1d4ed8' },
 }
 
+// Какое поле автозаполнения из какого файла извлечено
+const FIELD_SOURCE: Record<string, string> = {
+  supplier: 'Реквизиты поставщика.xlsx',
+  inn:      'Реквизиты поставщика.xlsx',
+  amount:   'Коммерческое предложение.pdf',
+  purpose:  'Обоснование закупки.docx',
+}
+
+// Открыть документ-источник: переход на /document
+function openSourceDoc(navigate: NavigateFunction, fileName: string) {
+  navigate(getDocRouteByFileName(fileName))
+}
+
 // shared folder-flow styled components
 const FlRoot = styled.div`max-width: 620px;`
 
@@ -248,6 +262,77 @@ const FlInfoBanner = styled.div<{ $ok?: boolean }>`
   font-size: 0.875rem; color: ${({ $ok }) => ($ok ? c.ok : c.accentDark)};
   line-height: 1.5; margin-bottom: 1.25rem;
 `
+
+// Ссылка-источник под строкой данных (basic)
+const FlSourceLink = styled.button`
+  display: inline-flex; align-items: flex-start; gap: 0.25rem;
+  background: none; border: none; padding: 0; margin-top: 0.25rem;
+  font-size: 0.75rem; color: ${c.accent}; cursor: pointer;
+  font-family: inherit; text-align: left; line-height: 1.4;
+  &:hover { text-decoration: underline; }
+`
+
+// ─── Documents modal (basic) ──────────────────────────────────────────────────
+
+const ModalOverlay = styled.div`
+  position: fixed; inset: 0; background: rgba(0, 0, 0, 0.45);
+  display: flex; align-items: center; justify-content: center; z-index: 1000;
+`
+const ModalDialog = styled.div`
+  background: ${c.cardBg}; border-radius: 16px; box-shadow: 0 8px 40px rgba(0, 0, 0, 0.18);
+  width: 460px; max-width: calc(100vw - 2rem); overflow: hidden;
+`
+const ModalHeader = styled.div`
+  padding: 1.25rem 1.5rem 1rem; border-bottom: 1px solid ${c.border};
+  display: flex; align-items: center; justify-content: space-between;
+`
+const ModalTitle = styled.h2`font-size: 1.125rem; font-weight: 700; color: ${c.text};`
+const ModalCloseBtn = styled.button`
+  background: none; border: none; cursor: pointer; color: ${c.textTer};
+  display: inline-flex; padding: 0.25rem; border-radius: 6px;
+  transition: color 0.1s, background 0.1s;
+  &:hover { color: ${c.text}; background: #f3f4f6; }
+`
+const ModalBody = styled.div`
+  padding: 1rem 1.5rem 1.5rem; display: flex; flex-direction: column; gap: 0.5rem;
+`
+const ModalFileRow = styled.div`
+  display: flex; align-items: center; gap: 0.625rem;
+  padding: 0.625rem 0.75rem; border: 1px solid ${c.border}; border-radius: 10px;
+`
+
+function DocsModal({
+  files, onClose, onOpen,
+}: {
+  files: MockFile[]
+  onClose: () => void
+  onOpen: (fileName: string) => void
+}) {
+  return (
+    <ModalOverlay onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+      <ModalDialog>
+        <ModalHeader>
+          <ModalTitle>Прикреплённые документы</ModalTitle>
+          <ModalCloseBtn onClick={onClose} aria-label="Закрыть">
+            <IconClose size="xs" color="currentColor" />
+          </ModalCloseBtn>
+        </ModalHeader>
+        <ModalBody>
+          {files.map(f => {
+            const col = EXT_COLOR[f.type] ?? { bg: '#f3f4f6', fg: '#374151' }
+            return (
+              <ModalFileRow key={f.id}>
+                <FlFileExt $bg={col.bg} $fg={col.fg}>{f.type.toUpperCase()}</FlFileExt>
+                <FlFileName>{f.name}</FlFileName>
+                <SecondaryButton size="s" text="Открыть" onClick={() => onOpen(f.name)} />
+              </ModalFileRow>
+            )
+          })}
+        </ModalBody>
+      </ModalDialog>
+    </ModalOverlay>
+  )
+}
 
 // ─── Shared: empty file drop zone ────────────────────────────────────────────
 
@@ -399,13 +484,23 @@ interface BasicFolderFlowProps {
 function BasicFolderFlow({ initialFiles, onReset }: BasicFolderFlowProps) {
   const navigate = useNavigate()
   const [pickerOpen, setPickerOpen] = useState(false)
-  const [attachedFiles, setAttachedFiles] = useState<MockFile[]>(initialFiles)
-  const [step, setStep]       = useState(1)
-  const [deadline, setDeadline] = useState('')
-  const [priority, setPriority] = useState<Priority>('Обычный')
-  const [comment, setComment]   = useState('')
+  const [docsModalOpen, setDocsModalOpen] = useState(false)
+  const [attachedFiles, setAttachedFiles] = useState<MockFile[]>(() => {
+    const ids = loadTaskDraft().attachedFileIds
+    if (ids && ids.length) return mockFiles.filter(f => ids.includes(f.id))
+    return initialFiles
+  })
+  const [step, setStep]       = useState(() => loadTaskDraft().step ?? 1)
+  const [deadline, setDeadline] = useState(() => loadTaskDraft().deadline ?? '')
+  const [priority, setPriority] = useState<Priority>(() => (loadTaskDraft().priority as Priority) ?? 'Обычный')
+  const [comment, setComment]   = useState(() => loadTaskDraft().comment ?? '')
   const [stepErr, setStepErr]   = useState('')
   const [done, setDone]         = useState(false)
+
+  // Сохраняем черновик, чтобы данные не терялись при открытии документа-источника
+  useEffect(() => {
+    saveTaskDraft({ attachedFileIds: attachedFiles.map(f => f.id), step, deadline, priority, comment })
+  }, [attachedFiles, step, deadline, priority, comment])
 
   function tryNext() {
     if (step === 3 && !deadline.trim()) { setStepErr('Укажите срок исполнения'); return }
@@ -484,15 +579,55 @@ function BasicFolderFlow({ initialFiles, onReset }: BasicFolderFlowProps) {
           <PageTitle $compact style={{ marginBottom: '0.5rem' }}>Проверьте найденные данные</PageTitle>
           <FlInfoBanner $ok>Мы нашли поставщика, сумму и назначение. Проверьте перед отправкой.</FlInfoBanner>
           <FlDataCard>
-            <FlDataRow><FlDataKey>Поставщик</FlDataKey><FlDataVal>{FOLDER_REQ.supplier}</FlDataVal></FlDataRow>
-            <FlDataRow><FlDataKey>ИНН</FlDataKey><FlDataVal>{FOLDER_REQ.inn}</FlDataVal></FlDataRow>
-            <FlDataRow><FlDataKey>Сумма</FlDataKey><FlDataVal>{FOLDER_REQ.amount}</FlDataVal></FlDataRow>
-            <FlDataRow><FlDataKey>Назначение</FlDataKey><FlDataVal>{FOLDER_REQ.purpose}</FlDataVal></FlDataRow>
+            <FlDataRow>
+              <FlDataKey>Поставщик</FlDataKey>
+              <FlDataVal>
+                <div>{FOLDER_REQ.supplier}</div>
+                <FlSourceLink onClick={() => openSourceDoc(navigate, FIELD_SOURCE.supplier)}>
+                  ↳ из файла: {FIELD_SOURCE.supplier}
+                </FlSourceLink>
+              </FlDataVal>
+            </FlDataRow>
+            <FlDataRow>
+              <FlDataKey>ИНН</FlDataKey>
+              <FlDataVal>
+                <div>{FOLDER_REQ.inn}</div>
+                <FlSourceLink onClick={() => openSourceDoc(navigate, FIELD_SOURCE.inn)}>
+                  ↳ из файла: {FIELD_SOURCE.inn}
+                </FlSourceLink>
+              </FlDataVal>
+            </FlDataRow>
+            <FlDataRow>
+              <FlDataKey>Сумма</FlDataKey>
+              <FlDataVal>
+                <div>{FOLDER_REQ.amount}</div>
+                <FlSourceLink onClick={() => openSourceDoc(navigate, FIELD_SOURCE.amount)}>
+                  ↳ из файла: {FIELD_SOURCE.amount}
+                </FlSourceLink>
+              </FlDataVal>
+            </FlDataRow>
+            <FlDataRow>
+              <FlDataKey>Назначение</FlDataKey>
+              <FlDataVal>
+                <div>{FOLDER_REQ.purpose}</div>
+                <FlSourceLink onClick={() => openSourceDoc(navigate, FIELD_SOURCE.purpose)}>
+                  ↳ из файла: {FIELD_SOURCE.purpose}
+                </FlSourceLink>
+              </FlDataVal>
+            </FlDataRow>
           </FlDataCard>
           <ActRow>
             <PrimaryButton size="m" text="Верно" onClick={tryNext} />
+            <SecondaryButton size="m" text="Посмотреть документы" onClick={() => setDocsModalOpen(true)} />
             <TertiaryButton size="m" text="Назад" onClick={() => { setStepErr(''); setStep(1) }} />
           </ActRow>
+          {docsModalOpen && (
+            <DocsModal
+              files={attachedFiles}
+              onClose={() => setDocsModalOpen(false)}
+              onOpen={fileName => openSourceDoc(navigate, fileName)}
+            />
+          )}
         </Card>
       )}
 
@@ -546,7 +681,7 @@ function BasicFolderFlow({ initialFiles, onReset }: BasicFolderFlowProps) {
             </FlDataRow>
           </FlDataCard>
           <ActRow>
-            <PrimaryButton size="m" text="Отправить заявку" onClick={() => { track('task-completed', { mode: 'basic', method: 'folder' }); setDone(true) }} />
+            <PrimaryButton size="m" text="Отправить заявку" onClick={() => { track('task-completed', { mode: 'basic', method: 'folder' }); clearTaskDraft(); setDone(true) }} />
             <TertiaryButton size="m" text="Назад" onClick={() => setStep(3)} />
           </ActRow>
         </Card>
@@ -706,6 +841,8 @@ const StdFolderFileCard = styled.div`
 const StdSourceNote = styled.div`
   font-size: 0.6875rem; color: ${c.ok}; margin-top: 0.25rem;
   display: flex; align-items: center; gap: 0.25rem;
+  cursor: pointer;
+  &:hover span { text-decoration: underline; }
 `
 const StdLockedField = styled.div<{ $clickable?: boolean }>`
   display: flex; align-items: center; gap: 0.5rem;
@@ -721,13 +858,6 @@ const StdEditBtn = styled.button`
   &:hover { color: ${c.accent}; }
 `
 
-const FIELD_SOURCE: Record<string, string> = {
-  supplier: 'Реквизиты поставщика.xlsx',
-  inn:      'Реквизиты поставщика.xlsx',
-  amount:   'Коммерческое предложение.pdf',
-  purpose:  'Обоснование закупки.docx',
-}
-
 interface StandardFolderFlowProps {
   initialFiles: MockFile[]
   initialValues?: ManualFormValues
@@ -737,8 +867,17 @@ interface StandardFolderFlowProps {
 function StandardFolderFlow({ initialFiles, initialValues, onValuesChange }: StandardFolderFlowProps) {
   const navigate = useNavigate()
   const { mode } = useUserMode()
+  // Черновик из sessionStorage — чтобы данные (включая прикреплённые файлы и автозаполнение)
+  // не терялись при открытии документа-источника и возврате через чипс.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const draft0 = useMemo(() => loadTaskDraft(), [])
+  const draftFiles = useMemo(() => {
+    const ids = draft0.attachedFileIds
+    return ids && ids.length ? mockFiles.filter(f => ids.includes(f.id)) : null
+  }, [draft0])
+
   const [pickerOpen, setPickerOpen] = useState(false)
-  const [attachedFiles, setAttachedFiles] = useState<MockFile[]>(initialFiles)
+  const [attachedFiles, setAttachedFiles] = useState<MockFile[]>(draftFiles ?? initialFiles)
   const hasFiles = attachedFiles.length > 0
 
   const [unlocked, setUnlocked]   = useState<Set<string>>(new Set())
@@ -750,10 +889,21 @@ function StandardFolderFlow({ initialFiles, initialValues, onValuesChange }: Sta
     purpose:  initialValues?.purpose  ?? '',
   }
   const filledVals = { supplier: FOLDER_REQ.supplier, inn: FOLDER_REQ.inn, amount: FOLDER_REQ.amount, purpose: FOLDER_REQ.purpose }
-  const [editVals, setEditVals]   = useState(initialFiles.length > 0 ? filledVals : emptyVals)
-  const [deadline, setDeadline]   = useState(initialValues?.deadline ?? '')
-  const [priority, setPriority]   = useState<Priority>(initialValues?.priority ?? 'Обычный')
-  const [comment, setComment]     = useState(initialValues?.comment ?? '')
+  const hasDraftVals = !!(draft0.supplier || draft0.inn || draft0.amount || draft0.purpose)
+  const [editVals, setEditVals]   = useState(() => {
+    if (hasDraftVals) {
+      return {
+        supplier: draft0.supplier ?? '',
+        inn:      draft0.inn      ?? '',
+        amount:   draft0.amount   ?? '',
+        purpose:  draft0.purpose  ?? '',
+      }
+    }
+    return (draftFiles ?? initialFiles).length > 0 ? filledVals : emptyVals
+  })
+  const [deadline, setDeadline]   = useState(draft0.deadline ?? initialValues?.deadline ?? '')
+  const [priority, setPriority]   = useState<Priority>((draft0.priority as Priority) ?? initialValues?.priority ?? 'Обычный')
+  const [comment, setComment]     = useState(draft0.comment ?? initialValues?.comment ?? '')
   const [preview, setPreview]     = useState(false)
   const [done, setDone]           = useState(false)
   const [deadlineErr, setDeadlineErr] = useState('')
@@ -764,6 +914,16 @@ function StandardFolderFlow({ initialFiles, initialValues, onValuesChange }: Sta
     onValuesChange({ supplier: editVals.supplier, inn: editVals.inn, amount: editVals.amount, purpose: editVals.purpose, deadline, priority, comment })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editVals.supplier, editVals.inn, editVals.amount, editVals.purpose, deadline, priority, comment])
+
+  // Сохраняем черновик (все режимы StandardFolderFlow)
+  useEffect(() => {
+    saveTaskDraft({
+      attachedFileIds: attachedFiles.map(f => f.id),
+      supplier: editVals.supplier, inn: editVals.inn, amount: editVals.amount, purpose: editVals.purpose,
+      deadline, priority, comment,
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [attachedFiles, editVals.supplier, editVals.inn, editVals.amount, editVals.purpose, deadline, priority, comment])
 
   function handleNext() {
     const errs: Record<string, string> = {}
@@ -803,7 +963,7 @@ function StandardFolderFlow({ initialFiles, initialValues, onValuesChange }: Sta
           Ваша заявка передана в отдел закупок.<br /> Мы уведомим вас о результате.
         </SuccessScreenText>
         <ActRow style={{ marginTop: '1rem' }}>
-          <PrimaryButton size="m" text="Создать ещё" onClick={() => { setDone(false); setPreview(false); setAttachedFiles([]); setEditVals(emptyVals); setDeadline(''); setComment('') }} />
+          <PrimaryButton size="m" text="Создать ещё" onClick={() => { clearTaskDraft(); setDone(false); setPreview(false); setAttachedFiles([]); setEditVals(emptyVals); setDeadline(''); setComment('') }} />
           <SecondaryButton size="m" text="На главную" onClick={() => navigate('/main')} />
         </ActRow>
       </SuccessScreenWrap>
@@ -832,7 +992,7 @@ function StandardFolderFlow({ initialFiles, initialValues, onValuesChange }: Sta
           </FlDataRow>
         </FlDataCard>
         <ActRow>
-          <PrimaryButton size="m" text="Отправить заявку" onClick={() => { track('task-completed', { mode, method: 'folder' }); setDone(true) }} />
+          <PrimaryButton size="m" text="Отправить заявку" onClick={() => { track('task-completed', { mode, method: 'folder' }); clearTaskDraft(); setDone(true) }} />
           <TertiaryButton size="m" text="Назад" onClick={() => setPreview(false)} />
         </ActRow>
       </div>
@@ -895,7 +1055,11 @@ function StandardFolderFlow({ initialFiles, initialValues, onValuesChange }: Sta
                       value={editVals[key]}
                       onChange={e => setEditVals(v => ({ ...v, [key]: e.target.value }))}
                     />
-                    {mode !== 'expert' && <StdSourceNote>✓ Найдено в файле: {FIELD_SOURCE[key]}</StdSourceNote>}
+                    {mode !== 'expert' && (
+                      <StdSourceNote onClick={() => openSourceDoc(navigate, FIELD_SOURCE[key])}>
+                        <span>✓ Найдено в файле: {FIELD_SOURCE[key]}</span>
+                      </StdSourceNote>
+                    )}
                   </>
                 ) : hasFiles ? (
                   <>
@@ -907,7 +1071,11 @@ function StandardFolderFlow({ initialFiles, initialValues, onValuesChange }: Sta
                         </StdEditBtn>
                       )}
                     </StdLockedField>
-                    {mode !== 'expert' && <StdSourceNote>✓ Найдено в файле: {FIELD_SOURCE[key]}</StdSourceNote>}
+                    {mode !== 'expert' && (
+                      <StdSourceNote onClick={() => openSourceDoc(navigate, FIELD_SOURCE[key])}>
+                        <span>✓ Найдено в файле: {FIELD_SOURCE[key]}</span>
+                      </StdSourceNote>
+                    )}
                   </>
                 ) : (
                   <>
@@ -964,17 +1132,35 @@ const ExpFlTitle = styled.h1`
 `
 const ExpFlBtnRow = styled.div`display: flex; gap: 0.5rem; margin-top: 1rem; align-items: center;`
 const ExpFlInlineInput = styled.div`flex: 1; min-width: 0;`
+const ExpSourceIcon = styled.button`
+  margin-left: auto;
+  background: none; border: none; padding: 0;
+  display: inline-flex; align-items: center;
+  color: ${c.textTer}; cursor: pointer; flex-shrink: 0;
+  transition: color 0.1s;
+  &:hover { color: ${c.accent}; }
+`
 
 function ExpertFolderFlow() {
   const navigate = useNavigate()
   const [editOpen, setEditOpen]   = useState(false)
-  const [editVals, setEditVals]   = useState({
-    supplier: FOLDER_REQ.supplier, inn: FOLDER_REQ.inn,
-    amount: FOLDER_REQ.amount,     purpose: FOLDER_REQ.purpose,
+  const [editVals, setEditVals]   = useState(() => {
+    const d = loadTaskDraft()
+    return {
+      supplier: d.supplier ?? FOLDER_REQ.supplier,
+      inn:      d.inn      ?? FOLDER_REQ.inn,
+      amount:   d.amount   ?? FOLDER_REQ.amount,
+      purpose:  d.purpose  ?? FOLDER_REQ.purpose,
+    }
   })
-  const [deadline, setDeadline]   = useState('')
-  const [priority, setPriority]   = useState<Priority>('Обычный')
-  const [comment, setComment]     = useState('')
+  const [deadline, setDeadline]   = useState(() => loadTaskDraft().deadline ?? '')
+  const [priority, setPriority]   = useState<Priority>(() => (loadTaskDraft().priority as Priority) ?? 'Обычный')
+  const [comment, setComment]     = useState(() => loadTaskDraft().comment ?? '')
+
+  // Сохраняем черновик, чтобы данные не терялись при открытии документа-источника
+  useEffect(() => {
+    saveTaskDraft({ supplier: editVals.supplier, inn: editVals.inn, amount: editVals.amount, purpose: editVals.purpose, deadline, priority, comment })
+  }, [editVals.supplier, editVals.inn, editVals.amount, editVals.purpose, deadline, priority, comment])
 
   const hasRequired = deadline.trim().length > 0
 
@@ -987,6 +1173,7 @@ function ExpertFolderFlow() {
 
   function submit() {
     track('task-completed', { mode: 'expert', method: 'folder' })
+    clearTaskDraft()
     navigate('/main', { state: { pendingToast: 'Заявка #1043 отправлена' } })
   }
 
@@ -1003,6 +1190,12 @@ function ExpertFolderFlow() {
               ? <ExpFlInlineInput><FlInput value={editVals[key]} onChange={e => setEditVals(v => ({ ...v, [key]: e.target.value }))} /></ExpFlInlineInput>
               : <FlDataVal>{editVals[key]}</FlDataVal>
             }
+            <ExpSourceIcon
+              title={`Открыть источник: ${FIELD_SOURCE[key]}`}
+              onClick={() => openSourceDoc(navigate, FIELD_SOURCE[key])}
+            >
+              <IconBlankDocOutline size="xs" color="currentColor" />
+            </ExpSourceIcon>
           </FlDataRow>
         ))}
         <FlDataRow>
@@ -1150,8 +1343,12 @@ export function TaskScreen() {
   const folderParam = searchParams.get('folder')
   const reviewId = searchParams.get('review')
 
-  // Entry chooser state (only used when isFolder is false)
-  const [rootEntry, setRootEntry] = useState<RootEntry>(null)
+  // Entry chooser state (only used when isFolder is false) — восстанавливается из черновика,
+  // чтобы возврат с документа-источника не сбрасывал выбранный способ создания заявки
+  const [rootEntry, setRootEntry] = useState<RootEntry>(() => {
+    const r = loadTaskDraft().rootEntry
+    return r === 'files' || r === 'manual' ? r : null
+  })
 
   // Shared form values — preserved across mode switches
   const [formValues, setFormValues] = useState<ManualFormValues>({
@@ -1160,11 +1357,18 @@ export function TaskScreen() {
   })
   const handleFormChange = useCallback((v: ManualFormValues) => setFormValues(v), [])
 
-  // Reset entry chooser on every navigation to this screen (including re-click of active nav item)
+  // На каждую навигацию к /task синхронизируем способ создания с черновиком:
+  // если черновик есть — продолжаем его, иначе показываем экран выбора
   useEffect(() => {
-    setRootEntry(null)
+    const r = loadTaskDraft().rootEntry
+    setRootEntry(r === 'files' || r === 'manual' ? r : null)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.key])
+
+  // Запоминаем выбранный способ создания заявки
+  useEffect(() => {
+    if (rootEntry) saveTaskDraft({ rootEntry })
+  }, [rootEntry])
 
   useEffect(() => {
     openObject({
@@ -1172,9 +1376,9 @@ export function TaskScreen() {
       type: 'form',
       label: 'Новая заявка',
       fullLabel: 'Форма создания заявки на доступ',
-      route: '/task',
+      route: `/task${location.search}`,
     })
-  }, [openObject])
+  }, [openObject, location.search])
 
   // ?review=: show request review stub, don't touch creation flow
   if (reviewId) {
@@ -1186,7 +1390,7 @@ export function TaskScreen() {
     const folderFiles = folderParam ? mockFiles.filter(f => f.folderId === folderParam) : []
     return (
       <>
-        {mode === 'basic'    && <BasicFolderFlow initialFiles={folderFiles} onReset={() => navigate('/task')} />}
+        {mode === 'basic'    && <BasicFolderFlow initialFiles={folderFiles} onReset={() => { clearTaskDraft(); navigate('/task') }} />}
         {mode === 'standard' && <StandardFolderFlow initialFiles={folderFiles} />}
         {mode === 'expert'   && <ExpertFolderFlow />}
       </>
@@ -1231,9 +1435,9 @@ export function TaskScreen() {
 
   // files flow with picker-selected files (picker lives inside BasicFolderFlow step 1)
   if (rootEntry === 'files') {
-    return <BasicFolderFlow initialFiles={[]} onReset={() => setRootEntry(null)} />
+    return <BasicFolderFlow initialFiles={[]} onReset={() => { clearTaskDraft(); setRootEntry(null) }} />
   }
 
   // Manual (basic only — standard/expert go directly to the file-based flow above)
-  return <BasicManualFlow onReset={() => setRootEntry(null)} initialValues={formValues} onValuesChange={handleFormChange} />
+  return <BasicManualFlow onReset={() => { clearTaskDraft(); setRootEntry(null) }} initialValues={formValues} onValuesChange={handleFormChange} />
 }

@@ -4,14 +4,17 @@ import styled from 'styled-components'
 import { IconFolderOutline, IconDocumentOutline } from '@salutejs/plasma-icons'
 import { SecondaryButton } from '../../components/shared/buttons'
 import { useUserMode } from '../../context/UserModeContext'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   mockFiles,
+  mockFolders,
   FILE_TYPE_LABELS,
   getRootFolders,
   getChildren,
+  getFolderById,
   getAllFilesInFolder,
   getFolderPathString,
+  getFileDocRoute,
   type MockFile,
   type MockFolder,
 } from '../../data/filesMockData'
@@ -149,6 +152,85 @@ const FilterTab = styled.button<{ $active: boolean }>`
 const TYPE_FILTERS: TypeFilter[] = ['all', 'pdf', 'docx', 'xlsx']
 const TYPE_FILTER_LABEL: Record<TypeFilter, string> = { all: 'Все', pdf: 'PDF', docx: 'DOCX', xlsx: 'XLSX' }
 
+// ─── Folder search results (shared: standard + expert) ─────────────────────────
+
+function matchFolders(query: string): MockFolder[] {
+  const q = query.trim().toLowerCase()
+  if (!q) return []
+  return mockFolders.filter(f => f.label.toLowerCase().includes(q))
+}
+
+const FolderResults = styled.div`
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+`
+
+const FolderResultsLabel = styled.div`
+  padding: 0.5rem 0.875rem;
+  font-size: 0.625rem;
+  font-weight: 700;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  border-bottom: 1px solid #f3f4f6;
+  background: #f9fafb;
+`
+
+const FolderResultRow = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem 0.875rem;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  border-bottom: 1px solid #f3f4f6;
+  transition: background 0.1s;
+  &:last-child { border-bottom: none; }
+  &:hover { background: #edf3ff; }
+`
+
+const FolderResultName = styled.span`
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #1a1a1a;
+`
+
+const FolderResultPath = styled.span`
+  font-size: 0.75rem;
+  color: #9ca3af;
+`
+
+const FolderResultTag = styled.span`
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: #9ca3af;
+  font-style: italic;
+  flex-shrink: 0;
+`
+
+function FolderResultsList({ folders, onOpen }: { folders: MockFolder[]; onOpen: (id: string) => void }) {
+  if (folders.length === 0) return null
+  return (
+    <FolderResults>
+      <FolderResultsLabel>Папки</FolderResultsLabel>
+      {folders.map(folder => (
+        <FolderResultRow key={folder.id} type="button" onClick={() => onOpen(folder.id)}>
+          <IconFolderOutline size="xs" color="#4f46e5" />
+          <FolderResultName>{folder.label}</FolderResultName>
+          <FolderResultPath>{getFolderPathString(folder.id)}</FolderResultPath>
+          <FolderResultTag>Папка</FolderResultTag>
+        </FolderResultRow>
+      ))}
+    </FolderResults>
+  )
+}
+
 // ─── BASIC ────────────────────────────────────────────────────────────────────
 
 const BASIC_CTX: CtxItem[] = [
@@ -157,11 +239,19 @@ const BASIC_CTX: CtxItem[] = [
   { label: 'Удалить', danger: true },
 ]
 
-function BasicFiles() {
+function BasicFiles({ initialFolderId }: { initialFolderId: string | null }) {
   const [showAllFolders, setShowAllFolders] = useState(false)
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
-  const [selectedFolder, setSelectedFolder] = useState<MockFolder | null>(null)
+  const [selectedFolder, setSelectedFolder] = useState<MockFolder | null>(
+    initialFolderId ? getFolderById(initialFolderId) ?? null : null
+  )
   const navigate = useNavigate()
+
+  useEffect(() => {
+    if (!initialFolderId) return
+    const f = getFolderById(initialFolderId)
+    if (f) setSelectedFolder(f)
+  }, [initialFolderId])
   const rootFolders = getRootFolders()
   const recentFiles = [...mockFiles].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5)
 
@@ -254,7 +344,7 @@ function BasicFiles() {
                   <BasicFileMeta>{file.date} · {file.owner} · {file.size}</BasicFileMeta>
                 </BasicFileInfo>
                 <BasicFileActions>
-                  <SecondaryButton size="s" text="Открыть" onClick={() => navigate('/document')} />
+                  <SecondaryButton size="s" text="Открыть" onClick={() => navigate(getFileDocRoute(file.id))} />
                   <MoreWrap>
                     <MoreBtn
                       title="Ещё"
@@ -490,15 +580,36 @@ const STD_CTX: CtxItem[] = [
   { label: 'Удалить', danger: true },
 ]
 
-function StandardFiles() {
+function StandardFiles({ initialFolderId }: { initialFolderId: string | null }) {
   const navigate = useNavigate()
   const rootFolders = getRootFolders()
-  const [selectedFolder, setSelectedFolder] = useState<string>('my')
-  const [expanded, setExpanded] = useState<Set<string>>(new Set(['my']))
+  const [selectedFolder, setSelectedFolder] = useState<string>(initialFolderId ?? 'my')
+  const [expanded, setExpanded] = useState<Set<string>>(() => {
+    const s = new Set<string>(['my'])
+    if (initialFolderId) {
+      s.add(initialFolderId)
+      const parent = getFolderById(initialFolderId)?.parentId
+      if (parent) s.add(parent)
+    }
+    return s
+  })
   const [treeWide, setTreeWide] = useState(false)
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all')
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+
+  // Pre-select / reveal folder coming from the global header search
+  useEffect(() => {
+    if (!initialFolderId) return
+    setSelectedFolder(initialFolderId)
+    setExpanded(prev => {
+      const next = new Set(prev)
+      next.add(initialFolderId)
+      const parent = getFolderById(initialFolderId)?.parentId
+      if (parent) next.add(parent)
+      return next
+    })
+  }, [initialFolderId])
 
   function toggleExpanded(id: string) {
     setExpanded(prev => {
@@ -508,6 +619,19 @@ function StandardFiles() {
     })
   }
 
+  function openFolder(id: string) {
+    setSelectedFolder(id)
+    setSearch('')
+    setExpanded(prev => {
+      const next = new Set(prev)
+      next.add(id)
+      const parent = getFolderById(id)?.parentId
+      if (parent) next.add(parent)
+      return next
+    })
+  }
+
+  const matchedFolders = matchFolders(search)
   const folderFiles = getAllFilesInFolder(selectedFolder)
   const filtered = folderFiles.filter(f => {
     if (typeFilter !== 'all' && f.type !== typeFilter) return false
@@ -588,6 +712,10 @@ function StandardFiles() {
           </FilterRow>
         </StdTopBar>
 
+        {search.trim() && (
+          <FolderResultsList folders={matchedFolders} onOpen={openFolder} />
+        )}
+
         <StdTable>
           <StdTableHead>
             <StdHCell>Название</StdHCell>
@@ -608,7 +736,7 @@ function StandardFiles() {
               <StdCell>{file.date}</StdCell>
               <StdCell>{file.owner}</StdCell>
               <StdActionsCell>
-                <SecondaryButton size="s" text="Открыть" onClick={() => navigate('/document')} />
+                <SecondaryButton size="s" text="Открыть" onClick={() => navigate(getFileDocRoute(file.id))} />
                 <MoreWrap>
                   <MoreBtn
                     type="button"
@@ -817,15 +945,40 @@ const StdEmpty = styled.div`
 
 // ─── EXPERT ───────────────────────────────────────────────────────────────────
 
-function ExpertFiles() {
+function ExpertFiles({ initialFolderId }: { initialFolderId: string | null }) {
   const navigate = useNavigate()
   const rootFolders = getRootFolders()
-  const [selectedFolder, setSelectedFolder] = useState<string | null>(null)
+  const [selectedFolder, setSelectedFolder] = useState<string | null>(initialFolderId ?? null)
   const [expanded, setExpanded] = useState<Set<string>>(new Set(rootFolders.map(f => f.id)))
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all')
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const [checkedFiles, setCheckedFiles] = useState<Set<string>>(new Set())
+
+  // Pre-select folder coming from the global header search
+  useEffect(() => {
+    if (!initialFolderId) return
+    setSelectedFolder(initialFolderId)
+    setExpanded(prev => {
+      const next = new Set(prev)
+      const parent = getFolderById(initialFolderId)?.parentId
+      if (parent) next.add(parent)
+      next.add(initialFolderId)
+      return next
+    })
+  }, [initialFolderId])
+
+  function openFolder(id: string) {
+    setSelectedFolder(id)
+    setSearch('')
+    setExpanded(prev => {
+      const next = new Set(prev)
+      const parent = getFolderById(id)?.parentId
+      if (parent) next.add(parent)
+      next.add(id)
+      return next
+    })
+  }
 
   function toggleCheck(id: string) {
     setCheckedFiles(prev => {
@@ -866,6 +1019,7 @@ function ExpertFiles() {
     })
   }
 
+  const matchedFolders = matchFolders(search)
   const baseFiles = selectedFolder ? getAllFilesInFolder(selectedFolder) : mockFiles
   const filtered = baseFiles.filter(f => {
     if (typeFilter !== 'all' && f.type !== typeFilter) return false
@@ -957,6 +1111,10 @@ function ExpertFiles() {
           </ExpSelectionBar>
         )}
 
+        {search.trim() && (
+          <FolderResultsList folders={matchedFolders} onOpen={openFolder} />
+        )}
+
         <ExpTable>
           <ExpTableHead>
             <ExpCheckCell onClick={toggleCheckAll}>
@@ -974,7 +1132,7 @@ function ExpertFiles() {
           {filtered.length === 0 ? (
             <ExpEmpty>No files</ExpEmpty>
           ) : filtered.map(file => (
-            <ExpRow key={file.id} onDoubleClick={() => navigate('/document')} title="Двойной клик — открыть файл">
+            <ExpRow key={file.id} onDoubleClick={() => navigate(getFileDocRoute(file.id))} title="Двойной клик — открыть файл">
               <ExpCheckCell onClick={e => { e.stopPropagation(); toggleCheck(file.id) }}>
                 <ExpCheckBox $checked={checkedFiles.has(file.id)}>
                   {checkedFiles.has(file.id) && '✓'}
@@ -1315,11 +1473,13 @@ const ExpCheckBox = styled.div<{ $checked: boolean }>`
 
 export function FilesScreen() {
   const { mode } = useUserMode()
+  const [searchParams] = useSearchParams()
+  const folderParam = searchParams.get('folder')
   return (
     <>
-      {mode === 'basic'    && <BasicFiles />}
-      {mode === 'standard' && <StandardFiles />}
-      {mode === 'expert'   && <ExpertFiles />}
+      {mode === 'basic'    && <BasicFiles initialFolderId={folderParam} />}
+      {mode === 'standard' && <StandardFiles initialFolderId={folderParam} />}
+      {mode === 'expert'   && <ExpertFiles initialFolderId={folderParam} />}
     </>
   )
 }

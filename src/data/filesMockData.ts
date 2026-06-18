@@ -90,3 +90,29 @@ export const FILE_TYPE_LABELS: Record<FileType, string> = {
   docx: 'DOCX',
   xlsx: 'XLSX',
 }
+
+// ─── Source documents (открываются с подробным контентом) ──────────────────────
+// Файлы из папки «ООО Рога и Копыта» открывают специальные экраны DocumentScreen.
+const SOURCE_DOC_BY_FILE_ID: Record<string, string> = {
+  f8:  'kp',    // Коммерческое предложение.pdf
+  f9:  'req',   // Реквизиты поставщика.xlsx
+  f10: 'basis', // Обоснование закупки.docx
+}
+
+// Маршрут для открытия файла: спец-документ, если он есть, иначе /document-заглушка
+export function getFileDocRoute(fileId: string): string {
+  const doc = SOURCE_DOC_BY_FILE_ID[fileId]
+  return doc ? `/document?doc=${doc}` : '/document'
+}
+
+// То же по имени файла (для источников автозаполнения в форме заявки)
+const SOURCE_DOC_BY_FILE_NAME: Record<string, string> = {
+  'Коммерческое предложение.pdf': 'kp',
+  'Реквизиты поставщика.xlsx':    'req',
+  'Обоснование закупки.docx':     'basis',
+}
+
+export function getDocRouteByFileName(name: string): string {
+  const doc = SOURCE_DOC_BY_FILE_NAME[name]
+  return doc ? `/document?doc=${doc}` : '/document'
+}
