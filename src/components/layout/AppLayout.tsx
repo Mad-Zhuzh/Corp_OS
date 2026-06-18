@@ -970,11 +970,16 @@ export function AppLayout() {
 
   const sidebarWidth = collapsed ? SIDEBAR_MIN : mode === 'basic' ? SIDEBAR_BASIC : SIDEBAR_STD
 
-  const docCrubSub = searchParams.get('page') !== null
-    ? 'Положение о компенсациях сотрудникам'
-    : 'Шаблон заявления на отпуск'
+  const docCrumbSub = (() => {
+    const doc = searchParams.get('doc')
+    if (doc === 'kp')    return 'Коммерческое предложение'
+    if (doc === 'req')   return 'Реквизиты поставщика'
+    if (doc === 'basis') return 'Обоснование закупки'
+    if (searchParams.get('page') !== null) return 'Положение о компенсациях сотрудникам'
+    return 'Шаблон заявления на отпуск'
+  })()
   const crumb: CrumbDef | undefined = location.pathname === '/document'
-    ? { section: 'Файлы и документы', sub: docCrubSub, sectionRoute: '/documents' }
+    ? { section: 'Файлы и документы', sub: docCrumbSub, sectionRoute: '/documents' }
     : CRUMBS[location.pathname]
 
   function getActiveNavId(): string {
